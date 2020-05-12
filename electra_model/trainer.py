@@ -2,7 +2,7 @@ from pytorch_lightning import Trainer
 from transformers import ElectraTokenizer
 from argparse import Namespace
 
-from .DIET_lightning_model import DualIntentEntityTransformer
+from electra_model.pl_model import KoELECTRAClassifier
 
 import os, sys
 import torch
@@ -17,10 +17,7 @@ def train(
     entity_optimizer_lr=2e-5,
     checkpoint_path=os.getcwd(),
     max_epochs=20,
-    tokenizer=ElectraTokenizer.from_pretrained("monologg/koelectra-small-discriminator"),
     #tokenizer=None,
-    # model args
-    num_encoder_layers=1,
     **kwargs
 ):
     gpu_num = torch.cuda.device_count()
@@ -40,17 +37,11 @@ def train(
     model_args["intent_optimizer_lr"] = intent_optimizer_lr
     model_args["entity_optimizer_lr"] = entity_optimizer_lr
 
-    if type(tokenizer) == ElectraTokenizer:
-        model_args["tokenizer"] = tokenizer
-
-    # model args
-    model_args["num_encoder_layers"] = num_encoder_layers
-
     for key, value in kwargs.items():
         model_args[key] = value
 
     hparams = Namespace(**model_args)
 
-    model = DualIntentEntityTransformer(hparams)
+    model = KoELECTRAClassifier(hparams)
 
     trainer.fit(model)
