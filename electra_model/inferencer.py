@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from electra_model.model import KoElectraModel
+from electra_model.pl_model import KoELECTRAClassifier
 
 import logging
 
@@ -10,7 +10,7 @@ entity_dict = {}
 
 class Inferencer:
     def __init__(self, checkpoint_path: str):
-        self.model = KoElectraModel.load_from_checkpoint(checkpoint_path)
+        self.model = KoELECTRAClassifier.load_from_checkpoint(checkpoint_path)
         self.model.model.eval()
 
         self.intent_dict = {}
@@ -37,11 +37,11 @@ class Inferencer:
         tokens_tmp = self.model.dataset.tokenize(text)
         tokens = []
         for t in tokens_tmp:
-            tokens.append(t)
+            tokens.append(t.unsqueeze(0))
 
         tokens = tuple(tokens)
 
-        intent_result, entity_result = self.model.forward(tokens.unsqueeze(0))
+        intent_result, entity_result = self.model.forward(tokens)
 
         # mapping intent result
         rank_values, rank_indicies = torch.topk(
