@@ -22,7 +22,7 @@ class ElectraDataset(torch.utils.data.Dataset):
 
     def __init__(
         self,
-        markdown_lines: List[str],
+        file_path: str,
         seq_len=128,
         tokenizer=None
     ):
@@ -42,6 +42,8 @@ class ElectraDataset(torch.utils.data.Dataset):
             self.tokenizer = tokenizer
         
         self.pad_token_id = self.tokenizer.pad_token_id
+        
+        markdown_lines = open(file_path, encoding="utf-8").readlines()
 
         current_intent_focus = ""
 
