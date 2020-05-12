@@ -1,14 +1,14 @@
-from collections import OrderedDict
-from tqdm import tqdm
-from typing import List
-from torchnlp.encoders.text import CharacterEncoder
-
 import torch
 import numpy as np
 import re
 
+from collections import OrderedDict
+from tqdm import tqdm
+from typing import List
+from transformers import ElectraTokenizer
 
-class RasaIntentEntityDataset(torch.utils.data.Dataset):
+
+class ElectraDataset(torch.utils.data.Dataset):
     """
     RASA NLU markdown file lines based Custom Dataset Class
 
@@ -24,10 +24,6 @@ class RasaIntentEntityDataset(torch.utils.data.Dataset):
         self,
         markdown_lines: List[str],
         seq_len=128,
-        pad_token_id=0,
-        unk_token_id=1,
-        eos_token_id=2,
-        bos_token_id=3,
         tokenizer=None
     ):
         self.intent_dict = {}
@@ -38,12 +34,14 @@ class RasaIntentEntityDataset(torch.utils.data.Dataset):
 
         self.dataset = []
         self.seq_len = seq_len
+        
 
-        # following torchnlp encoder preset
-        self.pad_token_id = pad_token_id
-        self.unk_token_id = unk_token_id
-        self.eos_token_id = eos_token_id
-        self.bos_token_id = bos_token_id
+        if tokenizer is None:
+            self.tokenizer = ElectraTokenizer.from_pretrained("monologg/koelectra-small-discriminator")
+        else:
+            self.tokenizer = tokenizer
+        
+        self.pad_token_id = self.tokenizer.pad_token_id
 
         current_intent_focus = ""
 
@@ -111,53 +109,47 @@ class RasaIntentEntityDataset(torch.utils.data.Dataset):
 
                     self.dataset.append(each_data_dict)
 
-        # encoder(tokenizer) definition
-        self.encoder = CharacterEncoder([data["text"] for data in self.dataset])
-        self.tokenizer = tokenizer
 
     def tokenize(self, text: str, padding: bool = True, return_tensor: bool = True):
-        # bos_token=3, eos_token=2, unk_token=1, pad_token=0
-        if self.tokenizer is not None:
-            tokens = self.tokenizer.encode(text)
-            if type(tokens) == list:
-                tokens = torch.tensor(tokens)
+        tokens = self.tokenizer.encode(text)
+        ##consider single token only
+        segment_ids = [0] * len(tokens)
 
-        else:
-            tokens = self.encoder.encode(text)
-
-            bos_tensor = torch.tensor([self.bos_token_id])
-            eos_tensor = torch.tensor([self.eos_token_id])
-            tokens = torch.cat((bos_tensor, tokens, eos_tensor), 0)
-
+        if type(tokens) == list:
+            tokens = torch.tensor(tokens)
+            
         if padding:
             if len(tokens) > self.seq_len:
-                tokens = tokens[:self.seq_len]
+                tokens = torch.tensor(tokens[:self.seq_len])
+                segment_ids = torch.tensor(segment_ids[:self.seq_len])
             else:
                 pad_tensor = torch.tensor(
                     [self.pad_token_id] * (self.seq_len - len(tokens))
                 )
                 tokens = torch.cat((tokens, pad_tensor), 0)
+                segment_ids = torch.tensor([0] * self.seq_len)
 
         if return_tensor:
-            return tokens
+            return (tokens, segment_ids)
         else:
-            return tokens.numpy()
+            return (tokens.numpy(), segment_ids.numpy())
 
     def __len__(self):
         return len(self.dataset)
 
     def __getitem__(self, idx):
-        tokens = self.tokenize(self.dataset[idx]["text"])
+        (tokens, segment_ids) = self.tokenize(self.dataset[idx]["text"])
 
         intent_idx = torch.tensor([self.dataset[idx]["intent_idx"]])
 
         entity_idx = np.zeros(self.seq_len)
         for entity_info in self.dataset[idx]["entities"]:
-            for i in range(entity_info["start"], entity_info["end"] + 1):
+            ##consider [CLS] token
+            for i in range(entity_info["start"] + 1, entity_info["end"] + 2):
                 entity_idx[i] = entity_info["entity_idx"]
         entity_idx = torch.from_numpy(entity_idx)
 
-        return tokens, intent_idx, entity_idx
+        return (tokens, segment_ids), intent_idx, entity_idx
 
     def get_intent_idx(self):
         return self.intent_dict

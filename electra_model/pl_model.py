@@ -9,8 +9,8 @@ from torchnlp.metrics import get_accuracy, get_token_accuracy
 
 from pytorch_lightning import Trainer
 
-from .dataset.intent_entity_dataset import RasaIntentEntityDataset
-from .model.models import EmbeddingTransformer
+from electra_model.dataset.electra_dataset import ElectraDataset
+from electra_model.model import KoElectraModel
 
 import os, sys
 import multiprocessing
@@ -21,23 +21,20 @@ import torch.nn as nn
 import pytorch_lightning as pl
 
 
-class DualIntentEntityTransformer(pl.LightningModule):
+class KoELECTRAClassifier(pl.LightningModule):
     def __init__(self, hparams):
         super().__init__()
 
         self.hparams = hparams
 
         if hasattr(self.hparams, 'tokenizer'):
-            self.dataset = RasaIntentEntityDataset(markdown_lines=self.hparams.nlu_data, tokenizer=self.hparams.tokenizer)
+            self.dataset = ElectraDataset(markdown_lines=self.hparams.nlu_data, tokenizer=self.hparams.tokenizer)
         else:
-            self.dataset = RasaIntentEntityDataset(markdown_lines=self.hparams.nlu_data, tokenizer=None)
+            self.dataset = ElectraDataset(markdown_lines=self.hparams.nlu_data, tokenizer=None)
 
-        self.model = EmbeddingTransformer(
-            vocab_size=self.dataset.get_vocab_size(),
-            seq_len=self.dataset.get_seq_len(),
+        self.model = KoElectraModel(
             intent_class_num=len(self.dataset.get_intent_idx()),
-            entity_class_num=len(self.dataset.get_entity_idx()),
-            num_encoder_layers=self.hparams.num_encoder_layers,
+            entity_class_num=len(self.dataset.get_entity_idx())
         )
 
         self.train_ratio = self.hparams.train_ratio
@@ -48,7 +45,8 @@ class DualIntentEntityTransformer(pl.LightningModule):
         self.loss_fn = nn.CrossEntropyLoss()
 
     def forward(self, x):
-        return self.model(x)
+        (input_ids, token_type_ids) = x
+        return self.model(input_ids, token_type_ids)
 
     def prepare_data(self):
         train_length = int(len(self.dataset) * self.train_ratio)
@@ -93,9 +91,9 @@ class DualIntentEntityTransformer(pl.LightningModule):
     def training_step(self, batch, batch_idx, optimizer_idx):
         self.model.train()
 
-        tokens, intent_idx, entity_idx = batch
+        inputs, intent_idx, entity_idx = batch
 
-        intent_pred, entity_pred = self.forward(tokens)
+        intent_pred, entity_pred = self.forward(inputs)
 
         intent_acc = get_accuracy(intent_idx.cpu(), intent_pred.max(1)[1].cpu())[0]
         entity_acc = get_token_accuracy(
@@ -127,9 +125,9 @@ class DualIntentEntityTransformer(pl.LightningModule):
     def validation_step(self, batch, batch_idx):
         self.model.eval()
 
-        tokens, intent_idx, entity_idx = batch
+        inputs, intent_idx, entity_idx = batch
 
-        intent_pred, entity_pred = self.forward(tokens)
+        intent_pred, entity_pred = self.forward(inputs)
 
         intent_acc = get_accuracy(intent_idx.cpu(), intent_pred.max(1)[1].cpu())[0]
         entity_acc = get_token_accuracy(

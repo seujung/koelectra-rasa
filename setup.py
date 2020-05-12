@@ -4,10 +4,10 @@ with open("requirements.txt") as f:
     required = f.read().splitlines()
 
 setup(
-    name="DIET-pytorch",
-    version="0.2",
-    description="Dual Intent Entity Transformer based on pytorch-lightning",
-    author="Cheesama",
+    name="koElectra-pytorch",
+    version="0.1",
+    description="Koelecta based intent / entity model",
+    author="seujung",
     install_requires=[],
     packages=find_packages(exclude=["docs", "tests", "tmp", "data"]),
     python_requires=">=3",
