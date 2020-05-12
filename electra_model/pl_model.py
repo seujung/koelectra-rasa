@@ -28,9 +28,9 @@ class KoELECTRAClassifier(pl.LightningModule):
         self.hparams = hparams
 
         if hasattr(self.hparams, 'tokenizer'):
-            self.dataset = ElectraDataset(markdown_lines=self.hparams.nlu_data, tokenizer=self.hparams.tokenizer)
+            self.dataset = ElectraDataset(file_path=self.hparams.file_path, tokenizer=self.hparams.tokenizer)
         else:
-            self.dataset = ElectraDataset(markdown_lines=self.hparams.nlu_data, tokenizer=None)
+            self.dataset = ElectraDataset(file_path=self.hparams.file_path, tokenizer=None)
 
         self.model = KoElectraModel(
             intent_class_num=len(self.dataset.get_intent_idx()),

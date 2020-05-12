@@ -11,6 +11,6 @@ trainer.train(
     intent_optimizer_lr=1e-5,
     entity_optimizer_lr=2e-5,
     checkpoint_path=os.getcwd(),
-    max_epochs=1,
+    max_epochs=6,
 
 )
