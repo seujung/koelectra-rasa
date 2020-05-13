@@ -12,7 +12,7 @@ def train(
     # training args
     train_ratio=0.8,
     batch_size=32,
-    optimizer="Adam",
+    optimizer="AdamW",
     intent_optimizer_lr=1e-5,
     entity_optimizer_lr=2e-5,
     checkpoint_path=os.getcwd(),
