@@ -12,6 +12,8 @@ def train(
     # training args
     train_ratio=0.8,
     batch_size=32,
+    intent_class_num=None,
+    entity_class_num=None,
     optimizer="AdamW",
     intent_optimizer_lr=1e-5,
     entity_optimizer_lr=2e-5,
@@ -33,6 +35,8 @@ def train(
     model_args["file_path"] = file_path
     model_args["train_ratio"] = train_ratio
     model_args["batch_size"] = batch_size
+    model_args["intent_class_num"] = intent_class_num
+    model_args["entity_class_num"] = entity_class_num
     model_args["optimizer"] = optimizer
     model_args["intent_optimizer_lr"] = intent_optimizer_lr
     model_args["entity_optimizer_lr"] = entity_optimizer_lr

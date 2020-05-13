@@ -29,14 +29,14 @@ class KoELECTRAClassifier(pl.LightningModule):
 
         self.hparams = hparams
 
-        if hasattr(self.hparams, 'tokenizer'):
-            self.dataset = ElectraDataset(file_path=self.hparams.file_path, tokenizer=self.hparams.tokenizer)
-        else:
-            self.dataset = ElectraDataset(file_path=self.hparams.file_path, tokenizer=None)
-
+#         self.model = KoElectraModel(
+#             intent_class_num=len(self.dataset.get_intent_idx()),
+#             entity_class_num=len(self.dataset.get_entity_idx())
+#         )
+    
         self.model = KoElectraModel(
-            intent_class_num=len(self.dataset.get_intent_idx()),
-            entity_class_num=len(self.dataset.get_entity_idx())
+            intent_class_num=self.hparams.intent_class_num,
+            entity_class_num=self.hparams.entity_class_num
         )
 
         self.train_ratio = self.hparams.train_ratio
@@ -49,14 +49,20 @@ class KoELECTRAClassifier(pl.LightningModule):
     def forward(self, x):
         (input_ids, token_type_ids) = x
         return self.model(input_ids, token_type_ids)
+    
 
     def prepare_data(self):
+        
+        if hasattr(self.hparams, 'tokenizer'):
+            self.dataset = ElectraDataset(file_path=self.hparams.file_path, tokenizer=self.hparams.tokenizer)
+        else:
+            self.dataset = ElectraDataset(file_path=self.hparams.file_path, tokenizer=None)
         train_length = int(len(self.dataset) * self.train_ratio)
 
         self.train_dataset, self.val_dataset = random_split(
             self.dataset, [train_length, len(self.dataset) - train_length],
         )
-
+        
     def train_dataloader(self):
         train_loader = DataLoader(
             self.train_dataset,
