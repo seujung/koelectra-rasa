@@ -1,8 +1,15 @@
 import os
 from electra_model import trainer
 
+with open('../labels.json') as f:
+    labels = json.load(f)
+
+intent_class_num = len(labels['intent'])
+entity_class_num = len(labels['entity']) + 1  ##consider XO type
+
+
 trainer.train(
-    file_path='../nlu.md',
+    file_path='../nlu_goldenset.md',
 
     #training args
     train_ratio=0.8,

@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from electra_model.pl_model import KoELECTRAClassifier
+from electra_diet.pl_model import KoELECTRAClassifier
 
 import logging
 

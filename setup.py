@@ -4,7 +4,7 @@ with open("requirements.txt") as f:
     required = f.read().splitlines()
 
 setup(
-    name="koElectra-pytorch",
+    name="electra_diet",
     version="0.1",
     description="Koelecta based intent / entity model",
     author="seujung",

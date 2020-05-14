@@ -11,8 +11,8 @@ from torchnlp.metrics import get_accuracy, get_token_accuracy
 
 from pytorch_lightning import Trainer
 
-from electra_model.dataset.electra_dataset import ElectraDataset
-from electra_model.model import KoElectraModel
+from electra_diet.dataset.electra_dataset import ElectraDataset
+from electra_diet.model import KoElectraModel
 
 import os, sys
 import multiprocessing
@@ -26,8 +26,9 @@ import pytorch_lightning as pl
 class KoELECTRAClassifier(pl.LightningModule):
     def __init__(self, hparams):
         super().__init__()
-
+        
         self.hparams = hparams
+#         print(self.hparams)
 
 #         self.model = KoElectraModel(
 #             intent_class_num=len(self.dataset.get_intent_idx()),
@@ -52,17 +53,39 @@ class KoELECTRAClassifier(pl.LightningModule):
     
 
     def prepare_data(self):
-        
         if hasattr(self.hparams, 'tokenizer'):
             self.dataset = ElectraDataset(file_path=self.hparams.file_path, tokenizer=self.hparams.tokenizer)
         else:
             self.dataset = ElectraDataset(file_path=self.hparams.file_path, tokenizer=None)
         train_length = int(len(self.dataset) * self.train_ratio)
+        
+        self.hparams.tokenize = self.get_tokenize()
+        print(self.hparams)
+        self.hparams.intent_label = self.get_intent_label()
+        print(self.hparams)
+        self.hparams.entity_label = self.get_entity_label()
+        print(self.hparams)
+        
 
         self.train_dataset, self.val_dataset = random_split(
             self.dataset, [train_length, len(self.dataset) - train_length],
         )
-        
+    
+    def get_tokenize(self):
+        return self.dataset.tokenize
+    
+    def get_intent_label(self):
+        self.intent_dict = {}
+        for k, v in self.dataset.intent_dict.items():
+            self.intent_dict[str(v)] = k
+        return self.intent_dict 
+    
+    def get_entity_label(self):
+        self.entity_dict = {}
+        for k, v in self.dataset.entity_dict.items():
+            self.entity_dict[str(v)] = k
+        return self.entity_dict
+            
     def train_dataloader(self):
         train_loader = DataLoader(
             self.train_dataset,

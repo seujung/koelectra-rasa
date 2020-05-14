@@ -2,7 +2,7 @@ from pytorch_lightning import Trainer
 from transformers import ElectraTokenizer
 from argparse import Namespace
 
-from electra_model.pl_model import KoELECTRAClassifier
+from electra_diet.pl_model import KoELECTRAClassifier
 
 import os, sys
 import torch
