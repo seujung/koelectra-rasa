@@ -16,15 +16,14 @@ class Inferencer:
 
         self.intent_dict = {}
         for k, v in self.model.hparams.intent_label.items():
-            self.intent_dict[v] = int(k)
+            self.intent_dict[int(k)] = v
 
         self.entity_dict = {}
-        for k, v in self.model.hparams.hparams.items():
-            self.entity_dict[v] = int(k)
+        for k, v in self.model.hparams.entity_label.items():
+            self.entity_dict[int(k)] = v
 
         logging.info('intent dictionary')
         logging.info(self.intent_dict)
-        print ()
 
         logging.info('entity dictionary')
         logging.info(self.entity_dict)
