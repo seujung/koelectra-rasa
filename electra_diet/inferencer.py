@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 from electra_diet.pl_model import KoELECTRAClassifier
+from electra_diet.tokenizer import tokenize
 
 import logging
 
@@ -14,12 +15,12 @@ class Inferencer:
         self.model.model.eval()
 
         self.intent_dict = {}
-        for k, v in self.model.dataset.intent_dict.items():
-            self.intent_dict[v] = k
+        for k, v in self.model.hparams.intent_label.items():
+            self.intent_dict[v] = int(k)
 
         self.entity_dict = {}
-        for k, v in self.model.dataset.entity_dict.items():
-            self.entity_dict[v] = k
+        for k, v in self.model.hparams.hparams.items():
+            self.entity_dict[v] = int(k)
 
         logging.info('intent dictionary')
         logging.info(self.intent_dict)
@@ -34,7 +35,7 @@ class Inferencer:
                 "model is not loaded, first call load_model(checkpoint_path)"
             )
 
-        tokens_tmp = self.model.dataset.tokenize(text)
+        tokens_tmp = tokenize(text, self.model.hparams.seq_len)
         tokens = []
         for t in tokens_tmp:
             tokens.append(t.unsqueeze(0))
