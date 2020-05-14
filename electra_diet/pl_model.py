@@ -28,8 +28,6 @@ class KoELECTRAClassifier(pl.LightningModule):
         super().__init__()
         
         self.hparams = hparams
-#         print(self.hparams)
-
 #         self.model = KoElectraModel(
 #             intent_class_num=len(self.dataset.get_intent_idx()),
 #             entity_class_num=len(self.dataset.get_entity_idx())
@@ -59,14 +57,10 @@ class KoELECTRAClassifier(pl.LightningModule):
             self.dataset = ElectraDataset(file_path=self.hparams.file_path, tokenizer=None)
         train_length = int(len(self.dataset) * self.train_ratio)
         
-        self.hparams.tokenize = self.get_tokenize()
-        print(self.hparams)
+        # self.hparams.tokenize = self.get_tokenize()
         self.hparams.intent_label = self.get_intent_label()
-        print(self.hparams)
         self.hparams.entity_label = self.get_entity_label()
-        print(self.hparams)
         
-
         self.train_dataset, self.val_dataset = random_split(
             self.dataset, [train_length, len(self.dataset) - train_length],
         )
