@@ -1,8 +1,9 @@
 import torch
+from transformers import ElectraTokenizer
+tokenizer = ElectraTokenizer.from_pretrained("monologg/koelectra-small-discriminator")
 
 def tokenize(self, text: str, seq_len: int, padding: bool = True, return_tensor: bool = True):
-    from transformers import ElectraTokenizer
-    tokenizer = ElectraTokenizer.from_pretrained("monologg/koelectra-small-discriminator")
+
     pad_token_id = tokenizer.pad_token_id
     tokens = tokenizer.encode(text)
     ##consider single token only
