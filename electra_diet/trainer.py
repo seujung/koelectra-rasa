@@ -3,9 +3,34 @@ from transformers import ElectraTokenizer
 from argparse import Namespace
 
 from electra_diet.pl_model import KoELECTRAClassifier
+from electra_diet.dataset.electra_dataset import ElectraDataset
 
 import os, sys
 import torch
+from torch.utils.data import DataLoader
+
+from pytorch_lightning.callbacks.base import Callback
+from electra_diet.metrics import show_intent_report
+
+class PerfCallback(Callback):
+    def __init__(self, file_path=None, gpu_num=0):
+        self.file_path = file_path
+        if gpu_num > 0:
+            self.cuda = True
+        else:
+            self.cuda = False
+
+    def on_train_end(self, trainer, pl_module):
+        print("train finished")
+        if self.file_path is None:
+            dataset = pl_module.val_dataset
+        else:
+            dataset = ElectraDataset(file_path=self.file_path, tokenizer=None)
+        
+        dataloader = DataLoader(dataset, batch_size = 32)
+        
+        show_intent_report(dataset, pl_module, file_name="test_metric.json", output_dir="results", cuda=True)
+
 
 def train(
     file_path,
@@ -19,14 +44,14 @@ def train(
     intent_optimizer_lr=1e-5,
     entity_optimizer_lr=2e-5,
     checkpoint_path=os.getcwd(),
-    max_epochs=20,
+    max_epochs=10,
     #tokenizer=None,
     **kwargs
 ):
     gpu_num = torch.cuda.device_count()
 
     trainer = Trainer(
-        default_root_dir=checkpoint_path, max_epochs=max_epochs, gpus=gpu_num
+        default_root_dir=checkpoint_path, max_epochs=max_epochs, gpus=gpu_num, callbacks=[PerfCallback(file_path = file_path, gpu_num=gpu_num)]
     )
 
     model_args = {}

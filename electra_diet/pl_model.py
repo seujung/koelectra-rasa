@@ -190,3 +190,5 @@ class KoELECTRAClassifier(pl.LightningModule):
             "log": tensorboard_logs,
             "progress_bar": tensorboard_logs,
         }
+    
+     
