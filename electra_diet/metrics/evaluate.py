@@ -66,7 +66,7 @@ def show_intent_report(dataset, pl_module, file_name=None, output_dir=None, cuda
     cm_matrix = confusion_matrix(
             pred=preds, label=targets, label_index=label_dict, file_name=cm_file_name, output_dir=output_dir)
     
-    pred_report(inequal_dict, cm_matrix, cm_file_name=file_name.replace(
+    pred_report(inequal_dict, cm_matrix, file_name=cm_file_name.replace(
             '.json', '.md'),  output_dir=output_dir)
     
 def get_token_to_text(tokenizer, data):
