@@ -37,7 +37,7 @@ def show_intent_report(dataset, pl_module, file_name=None, output_dir=None, cuda
         
         logit = intent_pred.detach().cpu()
         softmax = torch.nn.Softmax(dim=-1)
-        logit = softmax(logit).numpy()
+        logit = softmax(logit).max().numpy()
         logits = np.append(logits, logit)
     
     preds = preds.astype(int)
