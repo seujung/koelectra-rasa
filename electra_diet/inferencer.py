@@ -40,8 +40,8 @@ class Inferencer:
             tokens.append(t.unsqueeze(0))
 
         tokens = tuple(tokens)
-
-        intent_result, entity_result = self.model.forward(tokens)
+        
+        intent_result, entity_result = self.model.forward(*tokens)
 
         # mapping intent result
         rank_values, rank_indicies = torch.topk(

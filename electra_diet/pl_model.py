@@ -45,8 +45,7 @@ class KoELECTRAClassifier(pl.LightningModule):
         self.entity_optimizer_lr = self.hparams.entity_optimizer_lr
         self.loss_fn = nn.CrossEntropyLoss()
 
-    def forward(self, x):
-        (input_ids, token_type_ids) = x
+    def forward(self, input_ids, token_type_ids):
         return self.model(input_ids, token_type_ids)
     
 
@@ -117,8 +116,9 @@ class KoELECTRAClassifier(pl.LightningModule):
         self.model.train()
 
         inputs, intent_idx, entity_idx = batch
-
-        intent_pred, entity_pred = self.forward(inputs)
+        (input_ids, token_type_ids) = inputs
+        
+        intent_pred, entity_pred = self.forward(input_ids, token_type_ids)
 
         intent_acc = get_accuracy(intent_idx.cpu(), intent_pred.max(1)[1].cpu())[0]
         entity_acc = get_token_accuracy(
@@ -151,9 +151,9 @@ class KoELECTRAClassifier(pl.LightningModule):
         self.model.eval()
 
         inputs, intent_idx, entity_idx = batch
-
-        intent_pred, entity_pred = self.forward(inputs)
-
+        (input_ids, token_type_ids) = inputs
+        intent_pred, entity_pred = self.forward(input_ids, token_type_ids)
+    
         intent_acc = get_accuracy(intent_idx.cpu(), intent_pred.max(1)[1].cpu())[0]
         entity_acc = get_token_accuracy(
             entity_idx.cpu(),

@@ -29,9 +29,7 @@ class PerfCallback(Callback):
             dataset = pl_module.val_dataset
         else:
             dataset = ElectraDataset(file_path=self.file_path, tokenizer=None)
-        
-        dataloader = DataLoader(dataset, batch_size = 32)
-        
+                
         if self.output_dir is None:
             path = 'lightning_logs/'
             folder_path = [f for f in glob.glob(path + "**/", recursive=False)]
