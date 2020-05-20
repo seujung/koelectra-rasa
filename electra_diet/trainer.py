@@ -6,6 +6,7 @@ from electra_diet.pl_model import KoELECTRAClassifier
 from electra_diet.dataset.electra_dataset import ElectraDataset
 
 import os, sys
+import glob
 import torch
 from torch.utils.data import DataLoader
 
@@ -13,12 +14,14 @@ from pytorch_lightning.callbacks.base import Callback
 from electra_diet.metrics import show_intent_report
 
 class PerfCallback(Callback):
-    def __init__(self, file_path=None, gpu_num=0):
+    def __init__(self, file_path=None, gpu_num=0, report_nm=None, output_dir=None):
         self.file_path = file_path
         if gpu_num > 0:
             self.cuda = True
         else:
             self.cuda = False
+        self.report_nm = report_nm
+        self.output_dir = output_dir
 
     def on_train_end(self, trainer, pl_module):
         print("train finished")
@@ -29,7 +32,13 @@ class PerfCallback(Callback):
         
         dataloader = DataLoader(dataset, batch_size = 32)
         
-        show_intent_report(dataset, pl_module, file_name="test_metric.json", output_dir="results", cuda=True)
+        if self.output_dir is None:
+            path = 'lightning_logs/'
+            folder_path = [f for f in glob.glob(path + "**/", recursive=False)]
+            folder_path.sort()
+            self.output_dir  = folder_path[-1]
+        self.output_dir = os.path.join(self.output_dir, 'results')
+        show_intent_report(dataset, pl_module, file_name=self.report_nm, output_dir=self.output_dir, cuda=self.cuda)
 
 
 def train(
@@ -45,13 +54,14 @@ def train(
     entity_optimizer_lr=2e-5,
     checkpoint_path=os.getcwd(),
     max_epochs=10,
+    report_nm=None,
     #tokenizer=None,
     **kwargs
 ):
     gpu_num = torch.cuda.device_count()
 
     trainer = Trainer(
-        default_root_dir=checkpoint_path, max_epochs=max_epochs, gpus=gpu_num, callbacks=[PerfCallback(file_path = file_path, gpu_num=gpu_num)]
+        default_root_dir=checkpoint_path, max_epochs=max_epochs, gpus=gpu_num, callbacks=[PerfCallback(file_path = file_path, gpu_num=gpu_num, report_nm=report_nm)]
     )
 
     model_args = {}

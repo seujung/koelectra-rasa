@@ -37,8 +37,8 @@ def show_intent_report(dataset, pl_module, file_name=None, output_dir=None, cuda
         
         logit = intent_pred.detach().cpu()
         softmax = torch.nn.Softmax(dim=-1)
-        logit = softmax(logit).max().numpy()
-        logits = np.append(logits, logit)
+        logit = softmax(logit).numpy()
+        logits = np.append(logits, logit.max(-1))
     
     preds = preds.astype(int)
     targets = targets.astype(int)
@@ -46,8 +46,11 @@ def show_intent_report(dataset, pl_module, file_name=None, output_dir=None, cuda
     labels = list(label_dict.keys())
     target_names = list(label_dict.values())
     
-    report = show_rasa_metrics(pred=preds, label=targets, labels=labels, target_names=target_names, file_name=file_name)
-    
+    report = show_rasa_metrics(pred=preds, label=targets, labels=labels, target_names=target_names, file_name=file_name, output_dir=output_dir)
+#     print(logits)
+#     print(preds.shape)
+#     print(targets.shape)
+#     print(logits.shape)
     ##generate confusion matrix
     inequal_index = np.where(preds != targets)[0]
     inequal_dict = dict()
