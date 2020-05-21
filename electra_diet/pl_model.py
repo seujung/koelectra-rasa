@@ -70,13 +70,13 @@ class KoELECTRAClassifier(pl.LightningModule):
     def get_intent_label(self):
         self.intent_dict = {}
         for k, v in self.dataset.intent_dict.items():
-            self.intent_dict[str(v)] = k
+            self.intent_dict[int(v)] = k
         return self.intent_dict 
     
     def get_entity_label(self):
         self.entity_dict = {}
         for k, v in self.dataset.entity_dict.items():
-            self.entity_dict[str(v)] = k
+            self.entity_dict[int(v)] = k
         return self.entity_dict
             
     def train_dataloader(self):
