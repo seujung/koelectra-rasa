@@ -24,9 +24,7 @@ class ElectraDataset(torch.utils.data.Dataset):
         self,
         file_path: str,
         seq_len=128,
-        tokenizer=None,
-        intent_dict=None,
-        entity_dict=None
+        tokenizer=None
     ):
         self.intent_dict = {}
         self.entity_dict = {}
@@ -47,59 +45,23 @@ class ElectraDataset(torch.utils.data.Dataset):
         
         markdown_lines = open(file_path, encoding="utf-8").readlines()
 
-        intent_value_list = []
-        entity_type_list = []
-        current_intent_focus = ""
-
-        for line in tqdm(
-            markdown_lines,
-            desc="Organizing Intent & Entity dictionary in NLU markdown file ...",
-        ):
-            if len(line.strip()) < 2:
-                current_intent_focus = ""
-                continue
-
-            if "## " in line:
-                if "intent:" in line:
-                    intent_value_list.append(line.split(":")[1].strip())
-                    current_intent_focus = line.split(":")[1].strip()
-                else:
-                    current_intent_focus = ""
-
-            else:
-                if current_intent_focus != "":
-                    text = line[2:].strip()
-
-                    for type_str in re.finditer(r"\([a-zA-Z_1-2]+\)", text):
-                        entity_type = (
-                            text[type_str.start() + 1 : type_str.end() - 1]
-                            .replace("(", "")
-                            .replace(")", "")
-                        )
-                        entity_type_list.append(entity_type)
-
-        intent_value_list = sorted(intent_value_list)
-        for intent_value in intent_value_list:
-            if intent_value not in self.intent_dict.keys():
-                self.intent_dict[intent_value] = len(self.intent_dict)
-
-        entity_type_list = sorted(entity_type_list)
-        for entity_type in entity_type_list:
-            if entity_type not in self.entity_dict.keys():
-                self.entity_dict[entity_type] = len(self.entity_dict)
-
         current_intent_focus = ""
 
         for line in tqdm(
             markdown_lines, desc="Extracting Intent & Entity in NLU markdown files...",
         ):
             if len(line.strip()) < 2:
-                current_intent_focus = ""
                 continue
 
             if "## " in line:
                 if "intent:" in line:
                     current_intent_focus = line.split(":")[1].strip()
+
+                    if current_intent_focus not in self.intent_dict.keys():
+                        self.intent_dict[current_intent_focus] = len(
+                            self.intent_dict.keys()
+                        )
+
                 else:
                     current_intent_focus = ""
             else:
@@ -109,19 +71,16 @@ class ElectraDataset(torch.utils.data.Dataset):
                     entity_value_list = []
                     for value in re.finditer(r"\[(.*?)\]", text):
                         entity_value_list.append(
-                            text[value.start() + 1 : value.end() - 1]
-                            .replace("[", "")
-                            .replace("]", "")
+                            text[value.start() + 1 : value.end() - 1].replace('[','').replace(']','')
                         )
 
                     entity_type_list = []
-                    for type_str in re.finditer(r"\([a-zA-Z_1-2]+\)", text):
-                        entity_type = (
-                            text[type_str.start() + 1 : type_str.end() - 1]
-                            .replace("(", "")
-                            .replace(")", "")
-                        )
+                    for type_str in re.finditer(r'\([a-zA-Z_1-2]+\)', text):
+                        entity_type = text[type_str.start() + 1 : type_str.end() - 1].replace('(','').replace(')','')
                         entity_type_list.append(entity_type)
+
+                        if entity_type not in self.entity_dict.keys():
+                            self.entity_dict[entity_type] = len(self.entity_dict.keys())
 
                     text = re.sub(r"\([a-zA-Z_1-2]+\)", "", text)
                     text = text.replace("[", "").replace("]", "")
@@ -146,14 +105,11 @@ class ElectraDataset(torch.utils.data.Dataset):
                                     }
                                 )
                         except Exception as ex:
-                            print(f"error occured : {ex}")
-                            print(f"value: {value}")
-                            print(f"text: {text}")
+                            print (f'error occured : {ex}')
+                            print (f'value: {value}')
+                            print (f'text: {text}')
 
                     self.dataset.append(each_data_dict)
-
-        print(f"Intents: {self.intent_dict}")
-        print(f"Entities: {self.entity_dict}")
 
 
     def tokenize(self, text: str, padding: bool = True, return_tensor: bool = True):
