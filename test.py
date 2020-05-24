@@ -5,10 +5,10 @@ file_path ='/Users/digit82_mac/git_repo/nlu_dataset/nlu.md'
 
 data = ElectraDataset(file_path)
 
-from tqdm import trange
-for idx in trange(len(data)):
-    print(idx)
-    o = data.__getitem__(idx)
+# from tqdm import trange
+# for idx in trange(len(data)):
+#     print(idx)
+#     o = data.__getitem__(idx)
 
 
 
@@ -88,3 +88,98 @@ for entity_info in dataset[idx]["entities"]:
 
     
 
+## konlpy 확인
+
+from konlpy.tag import Twitter
+from konlpy.tag import Kkma, Komoran
+twitter = Twitter()
+twitter.pos(text)
+
+kkma = Kkma()
+kkma.pos(text)
+
+komoran = Komoran()
+##josa index
+josa_list = ['JC', 'JKB', 'JKC', 'JKG', 'JKO', 'JKQ', ' JKS', 'JKV', 'JX']
+text = "데이터를"
+pos = komoran.pos(text)
+for (k, v) in pos:
+    if v in josa_list:
+        text = text.replace(k, '')
+
+entity_dict = dict()
+for k, v in data.entity_dict_bio.items():
+    entity_dict[int(v)] = k
+
+
+######################################
+## test infer
+import re
+from konlpy.tag import Komoran
+komoran = Komoran()
+def delete_josa(text):
+    josa_list = ['JC', 'JKB', 'JKC', 'JKG', 'JKO', 'JKQ', ' JKS', 'JKV', 'JX']
+    pos = komoran.pos(text)
+    for (k, v) in pos:
+        if v in josa_list:
+            text = text.replace(k, '')
+    return text
+
+# idx =30
+idx = 24325
+dataset = data.dataset
+out = data.__getitem__(idx)
+
+text = "010-1234-5678에다가 1월부터1GB를 매달 주기로 보내줘"
+
+
+# mapping entity result
+entities = []
+
+entity_out = out[2].numpy()
+entity_output = dict()
+
+input_token, _ = data.tokenize(text)
+input_token = input_token.numpy()
+
+for i in input_token:
+    print(data.tokenizer.ids_to_tokens[i])
+
+entity_val = []
+entity_typ = ''
+entity_pos = dict()
+
+for i, e in enumerate(entity_out):
+    e = int(e)
+
+    if e > 0:
+        ##get index info
+        entity_label = entity_dict[e]
+        pos, typ = entity_label.split('-')
+        if pos == 'B':
+            entity_val = []
+            entity_val.append(input_token[i])
+            entity_typ = typ
+        
+        elif typ == entity_typ:
+            entity_val.append(input_token[i])
+    else:
+        if len(entity_val) > 0:
+            value = data.tokenizer.decode(entity_val)
+            value = delete_josa(value).replace('#', '').replace(' ','')
+            entity_pos[value] = entity_typ
+
+for value, typ in entity_pos.items():
+    m = re.search(value, text)
+    start_idx, end_idx = m.span()
+    entities.append(
+                    {
+                        "start": start_idx,
+                        "end": end_idx,
+                        "value": value,
+                        "entity": typ
+                    }
+                )
+    
+
+            
