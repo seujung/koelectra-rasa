@@ -8,9 +8,12 @@ from typing import List
 from transformers import ElectraTokenizer
 
 def find_sub_list(sub_list,this_list):
-    start_pos = this_list.index(sub_list[0])
-    end_pos = start_pos + len(sub_list)
-    return (start_pos, end_pos)
+    if set(sub_list).issubset(set(this_list)):
+        start_pos = this_list.index(sub_list[0])
+        end_pos = start_pos + len(sub_list)
+        return (start_pos, end_pos)
+    else:
+        return (-1, -1)
 
 
 class ElectraDataset(torch.utils.data.Dataset):
@@ -207,9 +210,39 @@ class ElectraDataset(torch.utils.data.Dataset):
         text_token = self.tokenizer.encode(text)
         entity_idx = np.zeros(self.seq_len)
         for entity_info in self.dataset[idx]["entities"]:
-            cur_entity_value = text[entity_info['start']:entity_info['end']]
-            cur_entityt_idx = self.tokenizer.encode(cur_entity_value)[1:-1]
-            (start_pos, end_pos) = find_sub_list(cur_entityt_idx, text_token)
+            add_token = 0
+            flag = -1
+            ## [데이터를] 이 하나의 토큰으로 인식됨 --> 조사 추가
+            while flag < 0:
+                base_cur_entity_value = text[entity_info['start']:entity_info['end']]
+                cur_entity_value = text[entity_info['start']:entity_info['end'] + add_token] ##원래 설정된 entity value
+                cur_entityt_idx = self.tokenizer.encode(cur_entity_value)[1:-1]
+                (start_pos, end_pos) = find_sub_list(cur_entityt_idx, text_token)
+                flag = start_pos + end_pos
+                add_token += 1
+                if add_token > len(text_token):
+                    ## Case 3: token이 분리된 경우
+                    isin_token = ''
+                    for t in text.split(' '):
+                        if base_cur_entity_value in t:
+                            isin_token = t
+                    partial_idx = self.tokenizer.encode(isin_token)[1:-1]
+                    ##token이 검출되지 않은 경우 에러 발생
+                    if len(partial_idx) == 0:
+                        raise Exception('please check the entity value.! current text is {}'.format(cur_entity_value)) 
+                    
+                    cur_entity_idx = []
+                    # partial token 검색
+                    for i in partial_idx:
+                        partial_token = self.tokenizer.ids_to_tokens[i].replace('#','')
+                        if partial_token in base_cur_entity_value:
+                            # print(partial_token)
+                            cur_entity_idx.append(i)
+                    if len(cur_entity_idx) == 0:
+                        raise Exception('please check the entity value.! current text is {}'.format(cur_entity_value)) 
+                    
+                    (start_pos, end_pos) = find_sub_list(cur_entity_idx, text_token)
+                    flag = start_pos + end_pos
 
             if self.tag_type == 'bio':
                 begin = -1

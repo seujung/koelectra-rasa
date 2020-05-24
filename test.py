@@ -1,39 +1,79 @@
 import numpy as np
 from electra_diet.dataset import ElectraDataset
-file_path ='/Users/digit82_mac/git_repo/nlu_dataset/nlu_goldenset.md'
-
+# file_path ='/Users/digit82_mac/git_repo/nlu_dataset/nlu_goldenset.md'
+file_path ='/Users/digit82_mac/git_repo/nlu_dataset/nlu.md'
 
 data = ElectraDataset(file_path)
 
+from tqdm import trange
+for idx in trange(len(data)):
+    print(idx)
+    o = data.__getitem__(idx)
 
-dataset = data.dataset
+
+
 
 # idx =30
-idx = 54
+idx = 24325
+dataset = data.dataset
 text = dataset[idx]['text']
 print(text)
 
 data.__getitem__(idx)
 
-input_ids = data.tokenizer.encode(text)
-for i, t in enumerate(input_ids):
+text_token = data.tokenizer.encode(text)
+for i, t in enumerate(text_token):
     print("i:{} token:{}".format(i, data.tokenizer.ids_to_tokens[t]))
 
 entity_dict_bio = data.entity_dict_bio
 
 def find_sub_list(sub_list,this_list):
-    start_pos = this_list.index(sub_list[0])
-    end_pos = start_pos + len(sub_list)
-    return (start_pos, end_pos)
+    if set(sub_list).issubset(set(this_list)):
+        start_pos = this_list.index(sub_list[0])
+        end_pos = start_pos + len(sub_list)
+        return (start_pos, end_pos)
+    else:
+        ##position이 없는 경우
+        return (-1, -1)
 
 
 entity_idx = np.zeros(128)
 for entity_info in dataset[idx]["entities"]:
-    ##consider [CLS] token
-    cur_entity_value = text[entity_info['start']:entity_info['end']]
-    cur_entityt_idx = data.tokenizer.encode(cur_entity_value)[1:-1]
-    
-    (start_pos, end_pos) = find_sub_list(cur_entityt_idx, input_ids)
+    add_token = 0
+    flag = -1
+    ## [데이터를] 이 하나의 토큰으로 인식됨 --> 조사 추가
+    while flag < 0:
+        base_cur_entity_value = text[entity_info['start']:entity_info['end']]
+        cur_entity_value = text[entity_info['start']:entity_info['end'] + add_token]
+        cur_entity_idx = data.tokenizer.encode(cur_entity_value)[1:-1]
+
+        (start_pos, end_pos) = find_sub_list(cur_entity_idx, text_token)
+        flag = start_pos + end_pos
+        ## Case 2: token에 조사가 포함된 경우
+        add_token += 1
+        if add_token > len(text_token):
+            ## Case 3: token이 분리된 경우
+            isin_token = ''
+            for t in text.split(' '):
+                if base_cur_entity_value in t:
+                    isin_token = t
+            partial_idx = data.tokenizer.encode(isin_token)[1:-1]
+            ##token이 검출되지 않은 경우
+            if len(partial_idx) == 0:
+                raise Exception('please check the entity value.! current text is {}'.format(cur_entity_value)) 
+
+            cur_entity_idx = []
+            for i in partial_idx:
+                partial_token = data.tokenizer.ids_to_tokens[i].replace('#','')
+                if partial_token in base_cur_entity_value:
+                    print(partial_token)
+                    cur_entity_idx.append(i)
+            if len(cur_entity_idx) == 0:
+                raise Exception('please check the entity value.! current text is {}'.format(cur_entity_value)) 
+
+            (start_pos, end_pos) = find_sub_list(cur_entity_idx, text_token)
+            flag = start_pos + end_pos
+            
 
     begin = -1
     begin_tag = 'B-'
