@@ -77,7 +77,7 @@ class KoELECTRAClassifier(pl.LightningModule):
     def get_entity_label(self):
         self.entity_dict = {}
         tmp_entity_dict = self.dataset.get_entity_idx()
-        for k, v in tmp_entity_dict:
+        for k, v in tmp_entity_dict.items():
             self.entity_dict[str(v)] = k
         return self.entity_dict
             
