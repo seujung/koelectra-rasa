@@ -101,19 +101,22 @@ class Inferencer:
             else:
                 if len(entity_val) > 0:
                     value = tokenizer.decode(entity_val)
-                    value = delete_josa(value).replace('#', '').replace(' ','')
+                    value = delete_josa(value).replace('#', '')
                     entity_pos[value] = entity_typ
         for value, typ in entity_pos.items():
             m = re.search(value, text)
-            start_idx, end_idx = m.span()
-            entities.append(
-                            {
-                                "start": start_idx,
-                                "end": end_idx,
-                                "value": value,
-                                "entity": typ
-                            }
-                        )
+            try:
+                start_idx, end_idx = m.span()
+                entities.append(
+                                {
+                                    "start": start_idx,
+                                    "end": end_idx,
+                                    "value": value,
+                                    "entity": typ
+                                }
+                            )
+            except:
+                pass
 
         # start_idx = -1
         # for i, char_idx in enumerate(entity_indices):
