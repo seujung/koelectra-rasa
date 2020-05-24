@@ -69,13 +69,15 @@ class KoELECTRAClassifier(pl.LightningModule):
     
     def get_intent_label(self):
         self.intent_dict = {}
-        for k, v in self.dataset.intent_dict.items():
+        tmp_intent_dict = self.dataset.get_intent_idx()
+        for k, v in tmp_intent_dict.items():
             self.intent_dict[str(v)] = k ##hparams key type should be string.
         return self.intent_dict 
     
     def get_entity_label(self):
         self.entity_dict = {}
-        for k, v in self.dataset.entity_dict.items():
+        tmp_entity_dict = self.dataset.get_entity_idx()
+        for k, v in tmp_entity_dict:
             self.entity_dict[str(v)] = k
         return self.entity_dict
             

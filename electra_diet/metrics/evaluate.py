@@ -75,7 +75,51 @@ def show_intent_report(dataset, pl_module, file_name=None, output_dir=None, cuda
     
     pred_report(inequal_dict, cm_matrix, file_name=cm_file_name.replace(
             '.json', '.md'),  output_dir=output_dir)
+
+def show_entity_report(dataset, pl_module, file_name=None, output_dir=None, cuda=True):
+    ##generate rasa performance matrics
+    tokenizer = dataset.tokenizer
+    text = []
+    preds = np.array([])
+    targets = np.array([])
+    logits = np.array([])
+    label_dict = dict()
+    pl_module.model.eval()
+    for k, v in pl_module.intent_dict.items():
+        label_dict[int(k)] = v
+    dataloader = DataLoader(dataset, batch_size=32)
+    for batch in dataloader:
+        inputs, intent_idx, entity_idx = batch
+        (input_ids, token_type_ids) = inputs
+        token = get_token_to_text(tokenizer, input_ids)
+#         print(intent_idx)
+#         print(intent_idx.shape)
+        text.extend(token)
+        if cuda > 0:
+            input_ids = input_ids.cuda()
+            token_type_ids = token_type_ids.cuda()
+        intent_pred, entity_pred = pl_module.model.forward(input_ids, token_type_ids)
+        y_label = intent_pred.argmax(1).cpu().numpy()
+        preds = np.append(preds, y_label)
+        targets = np.append(targets, intent_idx.cpu().numpy())
+        
+        logit = intent_pred.detach().cpu()
+        softmax = torch.nn.Softmax(dim=-1)
+        logit = softmax(logit).numpy()
+        logits = np.append(logits, logit.max(-1))
     
+    preds = preds.astype(int)
+    targets = targets.astype(int)
+#     print(preds)
+#     print(targets)
+
+    labels = list(label_dict.keys())
+    target_names = list(label_dict.values())
+    
+    report = show_rasa_metrics(pred=preds, label=targets, labels=labels, target_names=target_names, file_name=file_name, output_dir=output_dir)
+
+
+
 def get_token_to_text(tokenizer, data):
     values = []
     for token in data:
