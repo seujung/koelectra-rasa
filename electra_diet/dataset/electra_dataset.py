@@ -8,7 +8,9 @@ from typing import List
 from transformers import ElectraTokenizer
 
 def find_sub_list(sub_list,this_list):
-    return (this_list.index(sub_list[0]),len(sub_list))
+    start_pos = this_list.index(sub_list[0])
+    end_pos = start_pos + len(sub_list)
+    return (start_pos, end_pos)
 
 
 class ElectraDataset(torch.utils.data.Dataset):
@@ -214,7 +216,7 @@ class ElectraDataset(torch.utils.data.Dataset):
                 begin_tag = 'B-'
                 mid_tag = 'I-'
                 cur_entity = entity_info['entity']
-                for i in range(start_pos, end_pos + 1):
+                for i in range(start_pos, end_pos):
                     if begin < 0:
                         entity_idx[i] = self.entity_dict_bio[begin_tag + cur_entity]
                         begin += 1
@@ -223,7 +225,7 @@ class ElectraDataset(torch.utils.data.Dataset):
             else:
                 begin = -1
                 cur_entity = entity_info['entity']
-                for i in range(start_pos, end_pos + 1):
+                for i in range(start_pos, end_pos):
                     if begin < 0:
                         entity_idx[i] = self.entity_dict[cur_entity]
                         begin += 1
