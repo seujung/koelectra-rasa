@@ -5,4 +5,4 @@ torch
 
 #models
 transformers==2.8.0
-konlpy
+#konlpy

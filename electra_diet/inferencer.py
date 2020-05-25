@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 from electra_diet.pl_model import KoELECTRAClassifier
 from electra_diet.tokenizer import tokenize, get_tokenizer
-from konlpy.tag import Komoran
+# from konlpy.tag import Komoran
 import re
 
 import logging
@@ -10,15 +10,15 @@ import logging
 model = None
 intent_dict = {}
 entity_dict = {}
-komoran = Komoran()
+# komoran = Komoran()
 
-def delete_josa(text):
-    josa_list = ['JC', 'JKB', 'JKC', 'JKG', 'JKO', 'JKQ', ' JKS', 'JKV', 'JX']
-    pos = komoran.pos(text)
-    for (k, v) in pos:
-        if v in josa_list:
-            text = text.replace(k, '')
-    return text
+# def delete_josa(text):
+#     josa_list = ['JC', 'JKB', 'JKC', 'JKG', 'JKO', 'JKQ', ' JKS', 'JKV', 'JX']
+#     pos = komoran.pos(text)
+#     for (k, v) in pos:
+#         if v in josa_list:
+#             text = text.replace(k, '')
+#     return text
 
 
 class Inferencer:
@@ -103,7 +103,8 @@ class Inferencer:
                     else:
                         ##update previous entity
                         value = tokenizer.decode(entity_val)
-                        value = delete_josa(value).replace('#', '')
+                        # value = delete_josa(value).replace('#', '')
+                        value = value.replace('#', '')
                         entity_pos[value] = entity_typ
                         entity_val = []
                         ##add current entity
@@ -118,7 +119,8 @@ class Inferencer:
             else:
                 if len(entity_val) > 0:
                     value = tokenizer.decode(entity_val)
-                    value = delete_josa(value).replace('#', '')
+                    # value = delete_josa(value).replace('#', '')
+                    value = value.replace('#', '')
                     entity_pos[value] = entity_typ
                     entity_val = []
 
