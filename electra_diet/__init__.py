@@ -1,4 +1,4 @@
 from . import metrics
 from .pl_model import KoELECTRAClassifier
 from .inferencer import Inferencer
-from .tokenizer import tokenize
+from .tokenizer import tokenize, get_tokenizer
