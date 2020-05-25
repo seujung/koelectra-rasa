@@ -74,7 +74,7 @@ class Inferencer:
         entities = []
 
         # except first sequnce token whcih indicate BOS token
-        _, entity_indices = torch.max((entity_result)[0][1:,:], dim=1)
+        _, entity_indices = torch.max(entity_result[0], dim=1)
         entity_indices = entity_indices.tolist()
 
         input_token, _ = tokens_tmp
@@ -103,6 +103,8 @@ class Inferencer:
                     value = tokenizer.decode(entity_val)
                     value = delete_josa(value).replace('#', '')
                     entity_pos[value] = entity_typ
+        ## For debug type
+        print(entity_pos)
         for value, typ in entity_pos.items():
             m = re.search(value, text)
             try:
