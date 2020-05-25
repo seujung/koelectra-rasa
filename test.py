@@ -1,7 +1,7 @@
 import numpy as np
 from electra_diet.dataset import ElectraDataset
 # file_path ='/Users/digit82_mac/git_repo/nlu_dataset/nlu_goldenset.md'
-file_path ='/Users/digit82_mac/git_repo/nlu_dataset/nlu.md'
+file_path ='/Users/digit82/git_repo/nlu_dataset/nlu.md'
 
 data = ElectraDataset(file_path)
 
@@ -11,7 +11,9 @@ data = ElectraDataset(file_path)
 #     o = data.__getitem__(idx)
 
 
+from electra_diet.tokenizer import get_tokenizer
 
+tokenizer = get_tokenizer()
 
 # idx =30
 idx = 24325
@@ -183,3 +185,26 @@ for value, typ in entity_pos.items():
     
 
             
+## load vocab file
+import pandas as pd
+from konlpy.tag import Komoran
+from tqdm import tqdm
+komoran = Komoran()
+josa_list = ['JC', 'JKB', 'JKC', 'JKG', 'JKO', 'JKQ', ' JKS', 'JKV', 'JX']
+
+f = open("/Users/digit82/git_repo/vocab.txt", 'r')
+pos_dict = dict()
+
+lines = f.readlines()
+for line in tqdm(lines):
+    index = 0
+    pos = komoran.pos(line.replace('\n', ''))
+    for (k, v) in pos:
+        if v in josa_list:
+            index += 1
+    if index > 0:
+        pos_dict[line] = pos
+
+f.close()
+
+len(pos_dict.keys())

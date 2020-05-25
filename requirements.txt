@@ -1,8 +1,7 @@
 numpy
 pycm
 pytorch-lightning
-torch
-
+torch>=1.4.0
+pytorch-nlp>=0.5.0
 #models
 transformers==2.8.0
-#konlpy
