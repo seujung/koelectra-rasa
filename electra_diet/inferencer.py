@@ -122,8 +122,8 @@ class Inferencer:
                     entity_pos[value] = entity_typ
                     entity_val = []
 
-        ## For debug type
-        print(entity_pos)
+        # ## For debug type
+        # print(entity_pos)
         for value, typ in entity_pos.items():
             m = re.search(value, text)
             try:
