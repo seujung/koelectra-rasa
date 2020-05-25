@@ -89,7 +89,7 @@ class Inferencer:
 
             if e > 0:
                 ##get index info
-                entity_label = entity_dict[e]
+                entity_label = self.entity_dict[e]
                 pos, typ = entity_label.split('-')
 #                 print("pos:{} typ:{}".format(pos, typ))
                 if pos == 'B':
