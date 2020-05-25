@@ -16,7 +16,7 @@ from electra_diet.model import KoElectraModel
 
 import os, sys
 import multiprocessing
-import dill
+# import dill
 
 import torch
 import torch.nn as nn
