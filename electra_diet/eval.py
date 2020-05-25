@@ -2,6 +2,7 @@ import os
 import glob
 from pytorch_lightning.callbacks.base import Callback
 from electra_diet.metrics import show_intent_report
+from electra_diet.dataset.electra_dataset import ElectraDataset
 
 class PerfCallback(Callback):
     def __init__(self, file_path=None, gpu_num=0, report_nm=None, output_dir=None):
