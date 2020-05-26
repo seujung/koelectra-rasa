@@ -127,7 +127,7 @@ def show_entity_report(dataset, pl_module, file_name=None, output_dir=None, cuda
 
 
 
-    report = show_rasa_metrics(pred=preds, label=targets, output_dir=output_dir)
+    report = show_rasa_metrics(pred=preds, label=targets, file_name=file_name, output_dir=output_dir)
 
 
 def get_token_to_text(tokenizer, data):
