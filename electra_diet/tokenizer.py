@@ -1,6 +1,10 @@
 import torch
+import json
 from transformers import ElectraTokenizer
 tokenizer = ElectraTokenizer.from_pretrained("monologg/koelectra-small-discriminator")
+
+with open('artifact/token_converter.json') as f:
+    token_conver = json.load(f)
 
 def get_tokenizer():
     return tokenizer
@@ -28,3 +32,10 @@ def tokenize(text: str, seq_len: int, padding: bool = True, return_tensor: bool 
         return (tokens, segment_ids)
     else:
         return (tokens.numpy(), segment_ids.numpy())
+
+
+def delete_josa(token):
+    if token in token_conver.keys():
+        return token_conver[token]
+    else:
+        return token

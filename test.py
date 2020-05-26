@@ -192,13 +192,14 @@ from tqdm import tqdm
 komoran = Komoran()
 josa_list = ['JC', 'JKB', 'JKC', 'JKG', 'JKO', 'JKQ', ' JKS', 'JKV', 'JX']
 
-f = open("/Users/digit82/git_repo/vocab.txt", 'r')
+f = open("/Users/digit82_mac/vocab.txt", 'r')
 pos_dict = dict()
 
 lines = f.readlines()
 for line in tqdm(lines):
+    line = line.replace('\n', '')
     index = 0
-    pos = komoran.pos(line.replace('\n', ''))
+    pos = komoran.pos(line)
     for (k, v) in pos:
         if v in josa_list:
             index += 1
@@ -208,3 +209,34 @@ for line in tqdm(lines):
 f.close()
 
 len(pos_dict.keys())
+
+output = pd.DataFrame(pos_dict.items(), columns=['text', 'pos'])
+
+output.to_csv('pos_out.tsv', sep='\t')
+
+##filter file load
+filter_df  = pd.read_csv('~/git_repo/pos_out_filter.tsv', sep='\t')
+filter_df = filter_df.dropna().reset_index(drop=True)
+
+filter_text = filter_df['text'].tolist()
+
+komoran = Komoran()
+
+def delete_josa(text):
+    josa_list = ['JC', 'JKB', 'JKC', 'JKG', 'JKO', 'JKQ', ' JKS', 'JKV', 'JX']
+    pos = komoran.pos(text)
+    for (k, v) in pos:
+        if v in josa_list:
+            text = text.replace(k, '')
+    return text
+
+filter_dict = dict()
+
+for text in filter_text:
+    rep_text = delete_josa(text)
+    filter_dict[text] = rep_text
+
+import json
+with open('token_converter.json', 'w') as fp:
+    json.dump(difilter_dictct, fp)
+    
