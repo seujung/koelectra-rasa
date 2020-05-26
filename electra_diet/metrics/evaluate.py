@@ -91,7 +91,7 @@ def show_entity_report(dataset, pl_module, file_name=None, output_dir=None, cuda
     targets = list()
     labels = set()
 
-    for batch in tqdm(dataloader, desc="load intent dataset"):
+    for batch in tqdm(dataloader, desc="load entity dataset"):
         inputs, intent_idx, entity_idx = batch
         (input_ids, token_type_ids) = inputs
         token = get_token_to_text(tokenizer, input_ids)
