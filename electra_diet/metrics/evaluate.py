@@ -100,7 +100,8 @@ def show_entity_report(dataset, pl_module, file_name=None, output_dir=None, cuda
             token_type_ids = token_type_ids.cuda()
         _, entity_result = pl_module.model.forward(input_ids, token_type_ids)
 
-        _, entity_indices = torch.max(entity_result.cpu().numpy(), dim=-1)
+        entity_result = entity_result.detach().cpu()
+        _, entity_indices = torch.max(entity_result.numpy(), dim=-1)
 
         preds = list()
         targets = list()
