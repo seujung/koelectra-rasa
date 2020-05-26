@@ -1,9 +1,13 @@
+import os
 import torch
 import json
 from transformers import ElectraTokenizer
-tokenizer = ElectraTokenizer.from_pretrained("monologg/koelectra-small-discriminator")
+from pathlib import Path
 
-with open('artifact/token_converter.json') as f:
+tokenizer = ElectraTokenizer.from_pretrained("monologg/koelectra-small-discriminator")
+path = Path(__file__).parent
+# print(path)
+with open(os.path.join(path, 'assets/token_converter.json')) as f:
     token_conver = json.load(f)
 
 def get_tokenizer():
