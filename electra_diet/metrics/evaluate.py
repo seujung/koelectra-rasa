@@ -89,6 +89,10 @@ def show_entity_report(dataset, pl_module, file_name=None, output_dir=None, cuda
 
     decoder = NERDecoder(label_dict, None)
     dataloader = DataLoader(dataset, batch_size=32)
+    
+    preds = list()
+    targets = list()
+    labels = set()
 
     for batch in dataloader:
         inputs, intent_idx, entity_idx = batch
@@ -103,9 +107,7 @@ def show_entity_report(dataset, pl_module, file_name=None, output_dir=None, cuda
         entity_result = entity_result.detach().cpu()
         _, entity_indices = torch.max(entity_result, dim=-1)
 
-        preds = list()
-        targets = list()
-        labels = set()
+
 
         for i in range(entity_idx.shape[0]):
             decode_original = decoder.process(input_ids[i].cpu().numpy(), entity_idx[i].numpy())
