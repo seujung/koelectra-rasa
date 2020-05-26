@@ -7,10 +7,6 @@ from torch.utils.data import DataLoader
 from electra_diet.postprocessor import NERDecoder
 from .metrics import show_rasa_metrics, confusion_matrix, pred_report
 
-
-logger = logging.getLogger(__name__)
-
-
 def show_intent_report(dataset, pl_module, file_name=None, output_dir=None, cuda=True):
     ##generate rasa performance matrics
     tokenizer = dataset.tokenizer
@@ -23,7 +19,8 @@ def show_intent_report(dataset, pl_module, file_name=None, output_dir=None, cuda
     for k, v in pl_module.intent_dict.items():
         label_dict[int(k)] = v
     dataloader = DataLoader(dataset, batch_size=32)
-    for batch in dataloader:
+
+    for batch in tqdm(dataloader, desc="load intent dataset"):
         inputs, intent_idx, entity_idx = batch
         (input_ids, token_type_ids) = inputs
         token = get_token_to_text(tokenizer, input_ids)
@@ -59,7 +56,7 @@ def show_intent_report(dataset, pl_module, file_name=None, output_dir=None, cuda
     ##generate confusion matrix
     inequal_index = np.where(preds != targets)[0]
     inequal_dict = dict()
-    for i in trange(inequal_index.shape[0]):
+    for i in trange(inequal_index.shape[0], desc="Comparing the diff. between label and pred"):
         idx = inequal_index[i].item()
         pred = preds[idx]
         if label_dict[pred] not in inequal_dict.keys():
@@ -94,7 +91,7 @@ def show_entity_report(dataset, pl_module, file_name=None, output_dir=None, cuda
     targets = list()
     labels = set()
 
-    for batch in dataloader:
+    for batch in tqdm(dataloader, desc="load intent dataset"):
         inputs, intent_idx, entity_idx = batch
         (input_ids, token_type_ids) = inputs
         token = get_token_to_text(tokenizer, input_ids)
@@ -109,7 +106,7 @@ def show_entity_report(dataset, pl_module, file_name=None, output_dir=None, cuda
 
 
 
-        for i in range(entity_idx.shape[0]):
+        for i in range(entity_idx.shape[0], desc="Comparing the diff. between label and pred"):
             decode_original = decoder.process(input_ids[i].cpu().numpy(), entity_idx[i].numpy())
             decode_pred = decoder.process(input_ids[i].numpy(), entity_indices[i].numpy())
 
