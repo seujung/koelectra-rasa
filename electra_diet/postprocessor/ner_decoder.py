@@ -70,5 +70,7 @@ class NERDecoder(object):
                             )
             except:
                 pass
+        
+        return entities
                 
 
