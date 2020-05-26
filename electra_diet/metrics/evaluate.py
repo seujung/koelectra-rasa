@@ -102,7 +102,6 @@ def show_entity_report(dataset, pl_module, file_name=None, output_dir=None, cuda
 
         entity_result = entity_result.detach().cpu()
         _, entity_indices = torch.max(entity_result, dim=-1)
-        entity_result = entity_result.numpy()
 
         preds = list()
         targets = list()
@@ -110,7 +109,7 @@ def show_entity_report(dataset, pl_module, file_name=None, output_dir=None, cuda
 
         for i in range(entity_idx.shape[0]):
             decode_original = decoder.process(input_ids[i].cpu().numpy(), entity_idx[i].numpy())
-            decode_pred = decoder.process(input_ids[0].numpy(), entity_indices.numpy())
+            decode_pred = decoder.process(input_ids[i].numpy(), entity_indices[i].numpy())
 
             for origin in decode_original:
                 labels.add(origin['entity'])
