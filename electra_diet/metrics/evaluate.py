@@ -85,7 +85,7 @@ def show_entity_report(dataset, pl_module, file_name=None, output_dir=None, cuda
     logits = np.array([])
     label_dict = dict()
     pl_module.model.eval()
-    for k, v in pl_module.intent_dict.items():
+    for k, v in pl_module.entity_dict.items():
         label_dict[int(k)] = v
     dataloader = DataLoader(dataset, batch_size=32)
     for batch in dataloader:
@@ -98,15 +98,25 @@ def show_entity_report(dataset, pl_module, file_name=None, output_dir=None, cuda
         if cuda > 0:
             input_ids = input_ids.cuda()
             token_type_ids = token_type_ids.cuda()
-        intent_pred, entity_pred = pl_module.model.forward(input_ids, token_type_ids)
-        y_label = intent_pred.argmax(1).cpu().numpy()
-        preds = np.append(preds, y_label)
-        targets = np.append(targets, intent_idx.cpu().numpy())
+        _, entity_result = pl_module.model.forward(input_ids, token_type_ids)
+
+        entity_idx = entity_idx.cpu().numpy()
         
-        logit = intent_pred.detach().cpu()
-        softmax = torch.nn.Softmax(dim=-1)
-        logit = softmax(logit).numpy()
-        logits = np.append(logits, logit.max(-1))
+        # mapping entity result
+        entities = []
+
+        # except first sequnce token whcih indicate BOS token
+        for i in range(entity_result.shape[0]):
+            _, entity_indices = torch.max(entity_result[i], dim=1)
+            entity_indices = entity_indices.tolist()
+
+            input_token = input_ids[i]
+            input_token = input_token.numpy()
+
+            entity_val = []
+            entity_typ = ''
+            entity_pos = dict()
+
     
     preds = preds.astype(int)
     targets = targets.astype(int)
