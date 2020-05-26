@@ -9,6 +9,9 @@ class NERDecoder(object):
         self.tokenizer = get_tokenizer()
 
     def process(self, input_token, entity_indices):
+        # mapping entity result
+        entities = []
+
         entity_val = []
         entity_typ = ''
         entity_pos = dict()
