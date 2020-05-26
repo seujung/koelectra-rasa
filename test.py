@@ -238,5 +238,5 @@ for text in filter_text:
 
 import json
 with open('token_converter.json', 'w') as fp:
-    json.dump(difilter_dictct, fp)
+    json.dump(filter_dict, fp)
     
