@@ -125,7 +125,8 @@ def show_entity_report(dataset, pl_module, file_name=None, output_dir=None, cuda
 
 
 
-    report = show_rasa_metrics(pred=preds, label=targets, labels=labels, file_name=file_name, output_dir=output_dir)
+    # report = show_rasa_metrics(pred=preds, label=targets, labels=labels, file_name=file_name, output_dir=output_dir)
+    return preds, targets, labels
 
 
 
