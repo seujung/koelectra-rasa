@@ -106,7 +106,7 @@ def show_entity_report(dataset, pl_module, file_name=None, output_dir=None, cuda
 
 
 
-        for i in range(entity_idx.shape[0], desc="Comparing the diff. between label and pred"):
+        for i in trange(entity_idx.shape[0], desc="Comparing the diff. between label and pred"):
             decode_original = decoder.process(input_ids[i].cpu().numpy(), entity_idx[i].numpy())
             decode_pred = decoder.process(input_ids[i].numpy(), entity_indices[i].numpy())
 
