@@ -56,7 +56,7 @@ def show_intent_report(dataset, pl_module, file_name=None, output_dir=None, cuda
     ##generate confusion matrix
     inequal_index = np.where(preds != targets)[0]
     inequal_dict = dict()
-    for i in trange(inequal_index.shape[0], desc="Comparing the diff. between label and pred"):
+    for i in range(inequal_index.shape[0]):
         idx = inequal_index[i].item()
         pred = preds[idx]
         if label_dict[pred] not in inequal_dict.keys():
@@ -106,7 +106,7 @@ def show_entity_report(dataset, pl_module, file_name=None, output_dir=None, cuda
 
 
 
-        for i in trange(entity_idx.shape[0], desc="Comparing the diff. between label and pred"):
+        for i in range(entity_idx.shape[0]):
             decode_original = decoder.process(input_ids[i].cpu().numpy(), entity_idx[i].numpy())
             decode_pred = decoder.process(input_ids[i].numpy(), entity_indices[i].numpy())
 
