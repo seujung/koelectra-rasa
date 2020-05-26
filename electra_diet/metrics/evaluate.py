@@ -4,6 +4,7 @@ from tqdm import tqdm, trange
 import torch
 from torch.utils.data import DataLoader
 # from electra_diet.metrics import show_rasa_metrics
+from electra_diet.postprocessor import NERDecoder
 from .metrics import show_rasa_metrics, confusion_matrix, pred_report
 
 
@@ -77,61 +78,59 @@ def show_intent_report(dataset, pl_module, file_name=None, output_dir=None, cuda
             '.json', '.md'),  output_dir=output_dir)
 
 def show_entity_report(dataset, pl_module, file_name=None, output_dir=None, cuda=True):
+    
     ##generate rasa performance matrics
     tokenizer = dataset.tokenizer
     text = []
-    preds = np.array([])
-    targets = np.array([])
-    logits = np.array([])
     label_dict = dict()
     pl_module.model.eval()
     for k, v in pl_module.entity_dict.items():
         label_dict[int(k)] = v
+
+    decoder = NERDecoder(label_dicts, None)
     dataloader = DataLoader(dataset, batch_size=32)
+
     for batch in dataloader:
         inputs, intent_idx, entity_idx = batch
         (input_ids, token_type_ids) = inputs
         token = get_token_to_text(tokenizer, input_ids)
-#         print(intent_idx)
-#         print(intent_idx.shape)
         text.extend(token)
         if cuda > 0:
             input_ids = input_ids.cuda()
             token_type_ids = token_type_ids.cuda()
         _, entity_result = pl_module.model.forward(input_ids, token_type_ids)
 
-        entity_idx = entity_idx.cpu().numpy()
-        
-        # mapping entity result
-        entities = []
+        _, entity_indices = torch.max(entity_result.cpu().numpy(), dim=-1)
 
-        # except first sequnce token whcih indicate BOS token
-        for i in range(entity_result.shape[0]):
-            _, entity_indices = torch.max(entity_result[i], dim=1)
-            entity_indices = entity_indices.tolist()
+        preds = list()
+        targets = list()
+        labels = set()
 
-            input_token = input_ids[i]
-            input_token = input_token.numpy()
+        for i in range(entity_idx.shape[0]):
+            decode_original = decoder.process(input_ids[i].cpu().numpy(), entity_idx[i].numpy())
+            decode_pred = decoder.process(input_ids[0].numpy(), entity_indices.numpy())
 
-            entity_val = []
-            entity_typ = ''
-            entity_pos = dict()
+            for origin in decode_original:
+                labels.add(origin['entity'])
+                find_idx = 0
+                for pred in decode_pred:
+                    if origin['start'] == pred['start'] and origin['end'] == pred['end']:
+                        preds.append(origin['entity'])
+                        targets.append(origin['entity'])
+                        find_idx += 1
+                if find_idx == 0:
+                     preds.append('No_Entity')
+                     targets.append(origin['entity'])
 
-    
-    preds = preds.astype(int)
-    targets = targets.astype(int)
-#     print(preds)
-#     print(targets)
 
-    labels = list(label_dict.keys())
-    target_names = list(label_dict.values())
-    
-    report = show_rasa_metrics(pred=preds, label=targets, labels=labels, target_names=target_names, file_name=file_name, output_dir=output_dir)
+
+    report = show_rasa_metrics(pred=preds, label=targets, labels=labels, file_name=file_name, output_dir=output_dir)
 
 
 
 def get_token_to_text(tokenizer, data):
     values = []
     for token in data:
-        values.append(tokenizer.convert_tokens_to_string(tokenizer.convert_ids_to_tokens([x for x in token if x >4])))
+        # values.append(tokenizer.convert_tokens_to_string(tokenizer.convert_ids_to_tokens([x for x in token if x >4])))
+        values.append(tokenizer.decode(token, skip_special_tokens=True))
     return values
