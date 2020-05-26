@@ -87,7 +87,7 @@ def show_entity_report(dataset, pl_module, file_name=None, output_dir=None, cuda
     for k, v in pl_module.entity_dict.items():
         label_dict[int(k)] = v
 
-    decoder = NERDecoder(label_dicts, None)
+    decoder = NERDecoder(label_dict, None)
     dataloader = DataLoader(dataset, batch_size=32)
 
     for batch in dataloader:
