@@ -4,9 +4,10 @@ from electra_diet.tokenizer import get_tokenizer, delete_josa
 
 class NERDecoder(object):
 
-    def __init__(self, entity_dict:dict, tokenizer):
+    def __init__(self, entity_dict:dict, tokenizer=None):
         self.entity_dict = entity_dict
-        self.tokenizer = get_tokenizer()
+        if tokenizer is None:
+            self.tokenizer = get_tokenizer()
 
     def process(self, input_token, entity_indices):
         # mapping entity result
