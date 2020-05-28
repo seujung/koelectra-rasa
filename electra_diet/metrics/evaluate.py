@@ -78,7 +78,7 @@ def show_intent_report(dataset, pl_module, file_name=None, output_dir=None, cuda
 def show_entity_report(dataset, pl_module, file_name=None, output_dir=None, cuda=True):
     
     ##generate rasa performance matrics
-    tokenizer = dataset.tokenizer
+    tokenizer = get_tokenizer()
     text = []
     label_dict = dict()
     pl_module.model.eval()
