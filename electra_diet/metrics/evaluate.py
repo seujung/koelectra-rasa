@@ -5,11 +5,12 @@ import torch
 from torch.utils.data import DataLoader
 # from electra_diet.metrics import show_rasa_metrics
 from electra_diet.postprocessor import NERDecoder
+from electra_diet.tokenizer import get_tokenizer
 from .metrics import show_rasa_metrics, confusion_matrix, pred_report
 
 def show_intent_report(dataset, pl_module, file_name=None, output_dir=None, cuda=True):
     ##generate rasa performance matrics
-    tokenizer = dataset.tokenizer
+    tokenizer = get_tokenizer()
     text = []
     preds = np.array([])
     targets = np.array([])

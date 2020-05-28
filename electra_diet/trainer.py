@@ -60,7 +60,7 @@ def train(
     gpu_num = torch.cuda.device_count()
 
     trainer = Trainer(
-        default_root_dir=checkpoint_path, max_epochs=max_epochs, gpus=gpu_num, callbacks=[PerfCallback(file_path = file_path, gpu_num=gpu_num, report_nm=report_nm)]
+        default_root_dir=checkpoint_path, max_epochs=max_epochs, gpus=gpu_num, callbacks=[PerfCallback(gpu_num=gpu_num, report_nm=report_nm)]
     )
 
     model_args = {}
