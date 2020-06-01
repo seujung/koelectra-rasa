@@ -28,10 +28,13 @@ def show_intent_report(dataset, pl_module, file_name=None, output_dir=None, cuda
 #         print(intent_idx)
 #         print(intent_idx.shape)
         text.extend(token)
+        model =  pl_module.model
         if cuda > 0:
             input_ids = input_ids.cuda()
             token_type_ids = token_type_ids.cuda()
+            model = model.cuda()
         intent_pred, entity_pred = pl_module.model.forward(input_ids, token_type_ids)
+        intent_pred, entity_pred = model.forward(input_ids, token_type_ids)
         y_label = intent_pred.argmax(1).cpu().numpy()
         preds = np.append(preds, y_label)
         targets = np.append(targets, intent_idx.cpu().numpy())
@@ -97,10 +100,13 @@ def show_entity_report(dataset, pl_module, file_name=None, output_dir=None, cuda
         (input_ids, token_type_ids) = inputs
         token = get_token_to_text(tokenizer, input_ids)
         text.extend(token)
+        model =  pl_module.model
         if cuda > 0:
             input_ids = input_ids.cuda()
             token_type_ids = token_type_ids.cuda()
+            model = model.cuda()
         _, entity_result = pl_module.model.forward(input_ids, token_type_ids)
+        _, entity_result = model.forward(input_ids, token_type_ids)
 
         entity_result = entity_result.detach().cpu()
         _, entity_indices = torch.max(entity_result, dim=-1)
