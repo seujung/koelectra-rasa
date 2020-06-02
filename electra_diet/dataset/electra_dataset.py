@@ -140,9 +140,8 @@ class ElectraDataset(torch.utils.data.Dataset):
 
                     text = re.sub(r"\([a-zA-Z_1-2]+\)", "", text)
                     text = text.replace("[", "").replace("]", "")
-
                     each_data_dict = {}
-                    if len(text.strip() > 1):
+                    if len(text.strip()) > 1:
                         each_data_dict["text"] = text.strip()
                         each_data_dict["intent"] = current_intent_focus
                         each_data_dict["intent_idx"] = self.intent_dict[
