@@ -183,7 +183,7 @@ class ElectraDataset(torch.utils.data.Dataset):
             tokens = torch.tensor(tokens)
             
         if padding:
-            if len(tokens) > self.seq_len:
+            if len(tokens) >= self.seq_len:
                 tokens = torch.tensor(tokens[:self.seq_len])
                 segment_ids = torch.tensor(segment_ids[:self.seq_len])
             else:
