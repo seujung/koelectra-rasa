@@ -6,7 +6,7 @@ from torch.utils.data import DataLoader
 # from electra_diet.metrics import show_rasa_metrics
 from electra_diet.postprocessor import NERDecoder
 from electra_diet.tokenizer import get_tokenizer
-from .metrics import show_rasa_metrics, confusion_matrix, pred_report
+from .metrics import show_rasa_metrics, confusion_matrix, pred_report, show_entity_metrics
 
 def show_intent_report(dataset, pl_module, file_name=None, output_dir=None, cuda=True):
     ##generate rasa performance matrics
@@ -25,8 +25,6 @@ def show_intent_report(dataset, pl_module, file_name=None, output_dir=None, cuda
         inputs, intent_idx, entity_idx = batch
         (input_ids, token_type_ids) = inputs
         token = get_token_to_text(tokenizer, input_ids)
-#         print(intent_idx)
-#         print(intent_idx.shape)
         text.extend(token)
         model =  pl_module.model
         if cuda > 0:
@@ -46,17 +44,11 @@ def show_intent_report(dataset, pl_module, file_name=None, output_dir=None, cuda
     
     preds = preds.astype(int)
     targets = targets.astype(int)
-#     print(preds)
-#     print(targets)
 
     labels = list(label_dict.keys())
     target_names = list(label_dict.values())
     
     report = show_rasa_metrics(pred=preds, label=targets, labels=labels, target_names=target_names, file_name=file_name, output_dir=output_dir)
-#     print(logits)
-#     print(preds.shape)
-#     print(targets.shape)
-#     print(logits.shape)
     ##generate confusion matrix
     inequal_index = np.where(preds != targets)[0]
     inequal_dict = dict()
@@ -116,22 +108,24 @@ def show_entity_report(dataset, pl_module, file_name=None, output_dir=None, cuda
         for i in range(entity_idx.shape[0]):
             decode_original = decoder.process(input_ids[i].cpu().numpy(), entity_idx[i].numpy())
             decode_pred = decoder.process(input_ids[i].cpu().numpy(), entity_indices[i].numpy())
+            targets.append(decode_original)
+            preds.append(decode_pred)
 
-            for origin in decode_original:
-                labels.add(origin['entity'])
-                find_idx = 0
-                for pred in decode_pred:
-                    if origin['start'] == pred['start'] and origin['end'] == pred['end']:
-                        preds.append(origin['entity'])
-                        targets.append(origin['entity'])
-                        find_idx += 1
-                if find_idx == 0:
-                     preds.append('No_Entity')
-                     targets.append(origin['entity'])
+            # for origin in decode_original:
+            #     labels.add(origin['entity'])
+            #     find_idx = 0
+            #     for pred in decode_pred:
+            #         if origin['start'] == pred['start'] and origin['end'] == pred['end']:
+            #             preds.append(origin['entity'])
+            #             targets.append(origin['entity'])
+            #             find_idx += 1
+            #     if find_idx == 0:
+            #          preds.append('No_Entity')
+            #          targets.append(origin['entity'])
 
 
-
-    report = show_rasa_metrics(pred=preds, label=targets, file_name=file_name, output_dir=output_dir)
+    report = show_entity_metrics(pred=preds, label=targets, file_name=file_name, output_dir=output_dir)
+    # report = show_rasa_metrics(pred=preds, label=targets, file_name=file_name, output_dir=output_dir)
 
 
 def get_token_to_text(tokenizer, data):
