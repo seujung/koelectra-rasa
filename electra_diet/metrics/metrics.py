@@ -276,12 +276,12 @@ class Entity_Matrics:
         self.micro_avg['f1-score'] = f1
     
     def cal_macro_avg(self):
-        precison = []
+        precision = []
         recall = []
         for k, v in self.scores.items():
-            precison.append(v['p'])
+            precision.append(v['p'])
             recall.append(v['r'])
-        precison = np.array(precison).mean()
+        precision = np.array(precision).mean()
         recall = np.array(recall).mean()
         f1 = 2*(precision * recall / (precision + recall))
         self.macro_avg = dict()
