@@ -263,10 +263,12 @@ class Entity_Matrics:
         sum_TP = 0
         sum_FP = 0
         sum_FN = 0
+        support = 0
         for k, v in self.confusion_matrices.items():
             sum_TP += v['TP']
             sum_FP += v['FP']
             sum_FN += v['FN']
+            support += np.array(list(self.confusion_matrices[k].values())).sum()
         precision = sum_TP / (sum_TP + sum_FP)
         recall = sum_TP / (sum_TP + sum_FN)
         f1 = 2*(precision * recall / (precision + recall))
@@ -274,13 +276,17 @@ class Entity_Matrics:
         self.micro_avg['precision'] = precision
         self.micro_avg['recall'] = recall
         self.micro_avg['f1-score'] = f1
+        self.micro_avg['support'] = support
     
     def cal_macro_avg(self):
         precision = []
         recall = []
+        support = 0
         for k, v in self.scores.items():
             precision.append(v['p'])
             recall.append(v['r'])
+        for k, v in self.confusion_matrices.items():
+            support += np.array(list(self.confusion_matrices[k].values())).sum()
         precision = np.array(precision).mean()
         recall = np.array(recall).mean()
         f1 = 2*(precision * recall / (precision + recall))
@@ -288,17 +294,20 @@ class Entity_Matrics:
         self.macro_avg['precision'] = precision
         self.macro_avg['recall'] = recall
         self.macro_avg['f1-score'] = f1
+        self.macro_avg['support'] = support
     
     def cal_weight_avg(self):
         tp = []
         fp = []
         fn = []
         weight = []
+        support = 0
         for k, v in self.confusion_matrices.items():
             tp.append(v['TP'])
             fp.append(v['FP'])
             fn.append(v['FN'])
             weight.append(np.array(list(v.values())).sum())
+            support += np.array(list(self.confusion_matrices[k].values())).sum()
 
         weight = np.array(weight) / np.array(weight).sum()
         tp = np.array(tp)
@@ -311,6 +320,7 @@ class Entity_Matrics:
         self.weight_avg['precision'] = precision
         self.weight_avg['recall'] = recall
         self.weight_avg['f1-score'] = f1
+        self.weight_avg['support'] = support
     
     def generate_report(self):
         self.cal_confusion_matrices()
@@ -325,7 +335,7 @@ class Entity_Matrics:
             report[k]['precision'] = v['p']
             report[k]['recall'] = v['r']
             report[k]['f1-score'] = v['f1']
-        
+            report[k]['support'] = np.array(list(self.confusion_matrices[k].values())).sum()
         report['micro avg'] = self.micro_avg
         report['macro avg'] = self.macro_avg
         report['weighted avg'] = self.weight_avg
