@@ -38,12 +38,15 @@ class KoELECTRAClassifier(pl.LightningModule):
             entity_class_num=self.hparams.entity_class_num
         )
 
+        self.ignore_index = -1
+        self.entity_o_index = 0
         self.train_ratio = self.hparams.train_ratio
         self.batch_size = self.hparams.batch_size
         self.optimizer = self.hparams.optimizer
         self.intent_optimizer_lr = self.hparams.intent_optimizer_lr
         self.entity_optimizer_lr = self.hparams.entity_optimizer_lr
-        self.loss_fn = nn.CrossEntropyLoss()
+        self.intent_loss_fn = nn.CrossEntropyLoss()
+        self.entity_loss_fn = nn.CrossEntropyLoss(ignore_index=self.ignore_index)
 
     def forward(self, input_ids, token_type_ids):
         return self.model(input_ids, token_type_ids)
@@ -126,7 +129,7 @@ class KoELECTRAClassifier(pl.LightningModule):
         entity_acc = get_token_accuracy(
             entity_idx.cpu(),
             entity_pred.max(2)[1].cpu(),
-            ignore_index=self.dataset.pad_token_id,
+            ignore_index=self.entity_o_index,
         )[0]
 
         tensorboard_logs = {
@@ -135,14 +138,14 @@ class KoELECTRAClassifier(pl.LightningModule):
         }
 
         if optimizer_idx == 0:
-            intent_loss = self.loss_fn(intent_pred, intent_idx.squeeze(1))
+            intent_loss = self.intent_loss_fn(intent_pred, intent_idx.squeeze(1))
             tensorboard_logs["train/intent/loss"] = intent_loss
             return {
                 "loss": intent_loss,
                 "log": tensorboard_logs,
             }
         if optimizer_idx == 1:
-            entity_loss = self.loss_fn(entity_pred.transpose(1, 2), entity_idx.long())
+            entity_loss = self.entity_loss_fn(entity_pred.transpose(1, 2), entity_idx.long())
             tensorboard_logs["train/entity/loss"] = entity_loss
             return {
                 "loss": entity_loss,
@@ -160,11 +163,11 @@ class KoELECTRAClassifier(pl.LightningModule):
         entity_acc = get_token_accuracy(
             entity_idx.cpu(),
             entity_pred.max(2)[1].cpu(),
-            ignore_index=self.dataset.pad_token_id,
+            ignore_index=self.entity_o_index,
         )[0]
 
-        intent_loss = self.loss_fn(intent_pred, intent_idx.squeeze(1))
-        entity_loss = self.loss_fn(
+        intent_loss = self.intent_loss_fn(intent_pred, intent_idx.squeeze(1))
+        entity_loss = self.entity_loss_fn(
             entity_pred.transpose(1, 2), entity_idx.long()
         )  # , ignore_index=0)
 

@@ -203,7 +203,7 @@ class ElectraDataset(torch.utils.data.Dataset):
 
     def __getitem__(self, idx):
         (tokens, segment_ids) = self.tokenize(self.dataset[idx]["text"])
-
+        valid_length = len(self.tokenizer.encode(self.dataset[idx]["text"]))
         intent_idx = torch.tensor([self.dataset[idx]["intent_idx"]])
 
         text = self.dataset[idx]["text"]
@@ -264,6 +264,8 @@ class ElectraDataset(torch.utils.data.Dataset):
                         begin += 1
                     else:
                         entity_idx[i] = self.entity_dict[cur_entity]
+                        
+        entity_idx[valid_length:] = -1
         entity_idx = torch.from_numpy(entity_idx)
         # for entity_info in self.dataset[idx]["entities"]:
         #     ##consider [CLS] token
