@@ -126,8 +126,12 @@ class KoELECTRAClassifier(pl.LightningModule):
         intent_pred, entity_pred = self.forward(input_ids, token_type_ids)
 
         intent_acc = get_accuracy(intent_idx.cpu(), intent_pred.max(1)[1].cpu())[0]
+        
+        zero = torch.zeros_like(entity_idx).cpu()
+        acc_entity_idx = torch.where(entity_idx.cpu()<0, zero, entity_idx.cpu())
         entity_acc = get_token_accuracy(
-            entity_idx.cpu(),
+#             entity_idx.cpu(),
+            acc_entity_idx,
             entity_pred.max(2)[1].cpu(),
             ignore_index=self.entity_o_index,
         )[0]
@@ -160,8 +164,12 @@ class KoELECTRAClassifier(pl.LightningModule):
         intent_pred, entity_pred = self.forward(input_ids, token_type_ids)
     
         intent_acc = get_accuracy(intent_idx.cpu(), intent_pred.max(1)[1].cpu())[0]
+        
+        zero = torch.zeros_like(entity_idx).cpu()
+        acc_entity_idx = torch.where(entity_idx.cpu()<0, zero, entity_idx.cpu())
         entity_acc = get_token_accuracy(
-            entity_idx.cpu(),
+#             entity_idx.cpu(),
+            acc_entity_idx,
             entity_pred.max(2)[1].cpu(),
             ignore_index=self.entity_o_index,
         )[0]
