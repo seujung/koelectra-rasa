@@ -6,6 +6,7 @@ from collections import OrderedDict
 from tqdm import tqdm
 from typing import List
 from transformers import ElectraTokenizer
+from electra_diet.tokenizer import get_tokenizer
 
 def find_sub_list(sub_list,this_list):
     if set(sub_list).issubset(set(this_list)):
@@ -53,7 +54,7 @@ class ElectraDataset(torch.utils.data.Dataset):
         self.tag_type = tag_type.lower()
 
         if tokenizer is None:
-            self.tokenizer = ElectraTokenizer.from_pretrained("monologg/koelectra-small-discriminator")
+            self.tokenizer = get_tokenizer()
         else:
             self.tokenizer = tokenizer
         

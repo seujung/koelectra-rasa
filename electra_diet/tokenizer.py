@@ -4,7 +4,7 @@ import json
 from transformers import ElectraTokenizer
 from pathlib import Path
 
-tokenizer = ElectraTokenizer.from_pretrained("monologg/koelectra-small-discriminator")
+tokenizer = ElectraTokenizer.from_pretrained("monologg/koelectra-small-v2-discriminator")
 path = Path(__file__).parent
 # print(path)
 with open(os.path.join(path, 'assets/token_converter.json')) as f:
