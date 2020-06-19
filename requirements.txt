@@ -1,6 +1,6 @@
 numpy
 pycm
-pytorch-lightning==0.7.5
+pytorch-lightning==0.8.0
 torch>=1.4.0
 pytorch-nlp>=0.5.0
 #models
