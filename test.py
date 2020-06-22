@@ -3,7 +3,9 @@ from electra_diet.dataset import ElectraDataset
 # file_path ='/Users/digit82_mac/git_repo/nlu_dataset/nlu_goldenset.md'
 file_path ='/Users/digit82/git_repo/nlu_dataset/nlu.md'
 
-data = ElectraDataset(file_path)
+data = ElectraDataset(file_path=file_path, intent_word_len=32)
+
+data.__getitem__(0)
 
 # from tqdm import trange
 # for idx in trange(len(data)):

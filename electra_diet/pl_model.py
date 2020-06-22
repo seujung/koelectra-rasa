@@ -45,8 +45,11 @@ class KoELECTRAClassifier(pl.LightningModule):
         self.optimizer = self.hparams.optimizer
         self.intent_optimizer_lr = self.hparams.intent_optimizer_lr
         self.entity_optimizer_lr = self.hparams.entity_optimizer_lr
-        self.intent_loss_fn = nn.CrossEntropyLoss()
+        self.intent_loss_fn = nn.CrossEntropyLoss(ignore_index=self.ignore_index)
         self.entity_loss_fn = nn.CrossEntropyLoss(ignore_index=self.ignore_index)
+        self.teacher_forcing_ratio = 0.8
+        self.SOS_token = 31999
+        self.EOS_token = 32000
 
     def forward(self, input_ids, token_type_ids):
         return self.model(input_ids, token_type_ids)
@@ -122,11 +125,47 @@ class KoELECTRAClassifier(pl.LightningModule):
 
         inputs, intent_idx, entity_idx = batch
         (input_ids, token_type_ids) = inputs
-        
-        intent_pred, entity_pred = self.forward(input_ids, token_type_ids)
+        ## previous code
+        # intent_pred, entity_pred = self.forward(input_ids, token_type_ids)
 
-        intent_acc = get_accuracy(intent_idx.cpu(), intent_pred.max(1)[1].cpu())[0]
-        
+        # intent_acc = get_accuracy(intent_idx.cpu(), intent_pred.max(1)[1].cpu())[0]
+
+        intent_decoder, encoder_hidden, entity_pred = self.forward(input_ids, token_type_ids)
+
+        decoder_input = torch.tensor([[self.SOS_token]])
+
+        decoder_hidden = encoder_hidden
+
+        use_teacher_forcing = True if random.random() < self.teacher_forcing_ratio else False
+
+        target_length = input_ids.shape[0]
+
+        if use_teacher_forcing:
+            # Teacher forcing 포함: 목표를 다음 입력으로 전달
+            for di in range(target_length):
+                decoder_output, decoder_hidden, decoder_attention = decoder(
+                    decoder_input, decoder_hidden, encoder_outputs)
+                loss += intent_loss_fn(decoder_output, target_tensor[di])
+                decoder_input = intent_idx[di]  # Teacher forcing
+
+        else:
+            # Teacher forcing 미포함: 자신의 예측을 다음 입력으로 사용
+            for di in range(target_length):
+                decoder_output, decoder_hidden, decoder_attention = decoder(
+                    decoder_input, decoder_hidden, encoder_outputs)
+                topv, topi = decoder_output.topk(1)
+                decoder_input = topi.squeeze().detach()  # 입력으로 사용할 부분을 히스토리에서 분리
+
+                loss += intent_loss_fn(decoder_output, target_tensor[di])
+                if decoder_input.item() == self.EOS_token:
+                    break
+
+        intent_acc = get_token_accuracy(
+            intent_idx,
+            decoder_output.max(2)[1].cpu(),
+            ignore_index=self.ignore_index,
+        )[0]
+
         zero = torch.zeros_like(entity_idx).cpu()
         acc_entity_idx = torch.where(entity_idx.cpu()<0, zero, entity_idx.cpu())
         entity_acc = get_token_accuracy(
