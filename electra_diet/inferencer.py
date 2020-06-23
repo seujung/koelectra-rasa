@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 from electra_diet.pl_model import KoELECTRAClassifier
 from electra_diet.tokenizer import tokenize, get_tokenizer, delete_josa
+from electra_diet.postprocessor import post_intent
 import re
 
 import logging
@@ -130,8 +131,8 @@ class Inferencer:
             except:
                 pass
 
-
-
+        ##post processor
+        intent, entities = post_intent(intent, entities)
 
         return {
             "text": text,
