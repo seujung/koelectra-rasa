@@ -1,4 +1,4 @@
-def post_process(intent, entities):
+def post_process(intent, intent_ranking, entities):
 
     ##로밍 관련 후처리 로직
     if intent['name'] == 'intent_로밍_요금제_가입_멀티턴':
@@ -12,6 +12,7 @@ def post_process(intent, entities):
         if cnt == 0:
             intent['name'] = 'intent_로밍_요금제_추천_문의_멀티턴'
             intent['confidence'] = 0.99
+            intent_ranking[0] = intent
     
-    return intent, entities
+    return intent, intent_ranking, entities
         
