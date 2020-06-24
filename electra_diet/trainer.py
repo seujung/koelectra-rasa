@@ -2,7 +2,7 @@ from pytorch_lightning import Trainer
 from transformers import ElectraTokenizer
 from argparse import Namespace
 
-from electra_diet.pl_model import KoELECTRAClassifier
+from electra_diet.pl_model import KoELECTRAClassifier, KoELECTRAGenClassifier
 from electra_diet.dataset.electra_dataset import ElectraDataset
 
 import os, sys
@@ -20,6 +20,7 @@ def train(
     seq_len=128,
     intent_class_num=None,
     entity_class_num=None,
+    use_generator=False,
     optimizer="AdamW",
     intent_optimizer_lr=1e-5,
     entity_optimizer_lr=2e-5,
@@ -31,8 +32,11 @@ def train(
 ):
     gpu_num = torch.cuda.device_count()
 
+#     trainer = Trainer(
+#         default_root_dir=checkpoint_path, max_epochs=max_epochs, gpus=gpu_num, callbacks=[PerfCallback(gpu_num=gpu_num, report_nm=report_nm, root_path=checkpoint_path)]
+#     )
     trainer = Trainer(
-        default_root_dir=checkpoint_path, max_epochs=max_epochs, gpus=gpu_num, callbacks=[PerfCallback(gpu_num=gpu_num, report_nm=report_nm, root_path=checkpoint_path)]
+        default_root_dir=checkpoint_path, max_epochs=max_epochs, gpus=gpu_num
     )
 
     model_args = {}
@@ -45,6 +49,7 @@ def train(
     model_args["seq_len"] = seq_len
     model_args["intent_class_num"] = intent_class_num
     model_args["entity_class_num"] = entity_class_num
+    model_args["use_generator"] = use_generator
     model_args["optimizer"] = optimizer
     model_args["intent_optimizer_lr"] = intent_optimizer_lr
     model_args["entity_optimizer_lr"] = entity_optimizer_lr
@@ -54,6 +59,7 @@ def train(
 
     hparams = Namespace(**model_args)
 
-    model = KoELECTRAClassifier(hparams)
+#     model = KoELECTRAClassifier(hparams)
+    model = KoELECTRAGenClassifier(hparams)
 
     trainer.fit(model)

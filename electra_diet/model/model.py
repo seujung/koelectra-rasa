@@ -5,7 +5,7 @@ from transformers.modeling_electra import ElectraModel, ElectraConfig, ElectraPr
 
 
 class AttnDecoderRNN(nn.Module):
-    def __init__(self, hidden_size, output_size, dropout_p=0.1, max_length=24):
+    def __init__(self, hidden_size, output_size, dropout_p=0.1, max_length=128):
         super(AttnDecoderRNN, self).__init__()
         self.hidden_size = hidden_size
         self.output_size = output_size
@@ -37,12 +37,12 @@ class AttnDecoderRNN(nn.Module):
         output = F.log_softmax(self.out(output[0]), dim=1)
         return output, hidden, attn_weights
 
-    def initHidden(self):
-        return torch.zeros(1, 1, self.hidden_size)
+    def initHidden(self, device):
+        return torch.zeros(1, 1, self.hidden_size).to(device)
 
 
 class KoElectraModel(nn.Module):
-    def __init__(self, intent_class_num, entity_class_num, intent_word_len):
+    def __init__(self, intent_class_num, entity_class_num, use_generator=False):
         super(KoElectraModel, self).__init__()
 
         # config = ElectraConfig.from_dict(config)
@@ -52,11 +52,12 @@ class KoElectraModel(nn.Module):
         self.pad_idx = config.pad_token_id
         ##For intent part
         self.intent_class_num = intent_class_num
-        if intent_class_num is not None:
-            self.dropout = nn.Dropout(config.hidden_dropout_prob)
-            self.intent_cls = nn.Linear(config.hidden_size, intent_class_num)
+        self.use_generator = use_generator
+        self.dropout = nn.Dropout(config.hidden_dropout_prob)
+        if use_generator:
+            self.attn_decoder = AttnDecoderRNN(config.hidden_size, config.vocab_size, dropout_p=0.1, max_length=config.embedding_size) 
         else:
-            self.attn_decoder = AttnDecoderRNN(config.hidden_size, config.vocab_size, dropout_p=0.1, max_length=intent_word_len)
+            self.intent_cls = nn.Linear(config.hidden_size, intent_class_num)
         ##For entity part
         self.entity_cls = nn.Linear(config.hidden_size, entity_class_num)
 
@@ -70,12 +71,14 @@ class KoElectraModel(nn.Module):
         )
 
         outputs = outputs[0]
+        hidden_state = outputs
 
         entity_output = self.entity_cls(self.dropout(outputs))
 
-        if self.intent_class_num is not None:
+        if self.use_generator:
+            decoder = self.attn_decoder
+            return decoder, hidden_state, entity_output
+
+        else:
             cls_outout = self.intent_cls(self.dropout(outputs[:,0,:]))
             return cls_outout, entity_output
-        else:
-            decoder = self.attn_decoder()
-            return decoder, hidden_state, entity_output

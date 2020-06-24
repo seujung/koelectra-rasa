@@ -204,7 +204,6 @@ class ElectraDataset(torch.utils.data.Dataset):
             return (tokens.numpy(), segment_ids.numpy())
 
     def gen_intent_word(self, intent_word):
-        print(intent_word)
         max_len = self.intent_word_len
         intent_word_token = self.tokenizer.encode(intent_word)[1:-1]
         intent_word_token.append(self.entity_EOS_token)
@@ -227,6 +226,7 @@ class ElectraDataset(torch.utils.data.Dataset):
         if self.intent_word_len is None:
             intent_idx = torch.tensor([self.dataset[idx]["intent_idx"]])
         else:
+#             print(self.dataset[idx]["intent"])
             intent_idx = torch.tensor(self.gen_intent_word(self.dataset[idx]["intent"]))
 
         text = self.dataset[idx]["text"]
@@ -296,7 +296,7 @@ class ElectraDataset(torch.utils.data.Dataset):
         #         entity_idx[i] = entity_info["entity_idx"]
         # entity_idx = torch.from_numpy(entity_idx)
 
-        return (tokens, segment_ids), intent_idx, entity_idx
+        return (tokens, segment_ids), intent_idx.long(), entity_idx
 
     def get_intent_idx(self):
         return self.intent_dict
