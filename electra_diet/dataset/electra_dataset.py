@@ -210,7 +210,8 @@ class ElectraDataset(torch.utils.data.Dataset):
         intent_word_token = np.array(intent_word_token)
         if intent_word_token.shape[0] < max_len:
             additional_len = max_len - intent_word_token.shape[0]
-            pad_tokens = np.zeros(additional_len) - 1
+#             pad_tokens = np.zeros(additional_len) - 1
+            pad_tokens = np.zeros(additional_len)
             intent_word_token = np.concatenate([intent_word_token, pad_tokens])
         else:
             intent_word_token = intent_word_token[:max_len]

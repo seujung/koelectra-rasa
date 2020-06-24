@@ -308,69 +308,49 @@ class KoELECTRAGenClassifier(pl.LightningModule):
         intent_decoder, encoder_outputs, entity_pred = self.forward(input_ids, token_type_ids)
         batch_size = input_ids.shape[0]
         target_length = intent_idx.shape[-1]
+                
+        intent_pred= []
         
-        intent_pred = torch.zeros_like(intent_idx) - 1
-        
-        intent_pred_list= []
-        intent_label_list = []
-        
-        
-        for b in range(batch_size):
-            intent_id = intent_idx[b]
-            decoder_input = torch.tensor([[self.SOS_token]]).to(intent_id.device)
-            decoder_hidden = intent_decoder.initHidden(intent_id.device)
-            encoder_output = encoder_outputs[b]
-            
-            use_teacher_forcing = True if random.random() < self.teacher_forcing_ratio else False   
-            intent_pred_batch= []
-            intent_label_batch = []
+        decoder_input = torch.tensor([[self.SOS_token] * batch_size]).to(intent_idx.device)
+        decoder_hidden = intent_decoder.initHidden(intent_idx.device, batch_size=batch_size)
+
+        use_teacher_forcing = True if random.random() < self.teacher_forcing_ratio else False   
             
 #             print("decoder_input:{}".format(decoder_input.shape))
 #             print("decoder_hidden:{}".format(decoder_hidden.shape))
 #             print("encoder_output:{}".format(encoder_output.shape))
-
-            if use_teacher_forcing:
-#                 print("use teacher forcing")
+#         print("target length:{}".format(target_length))
+        if use_teacher_forcing:
+#             print("use teacher forcing")
                 # Teacher forcing 포함: 목표를 다음 입력으로 전달
-                for di in range(target_length):
+            for di in range(target_length):
 #                     print("================================")
 #                     print("decoder_input:{}".format(decoder_input.shape))
 #                     print("decoder_hidden:{}".format(decoder_hidden.shape))
 #                     print("encoder_output:{}".format(encoder_output.shape))
-                    decoder_output, decoder_hidden, decoder_attention = intent_decoder(
-                        decoder_input, decoder_hidden, encoder_output)
-                    intent_pred_batch.append(decoder_output)
-                    intent_label_batch.append(intent_id[di].unsqueeze(0))
-#                     intent_loss += self.intent_loss_fn(decoder_output, intent_idx[di])
-                    intent_pred[b][di] = decoder_output.argmax(-1).item()
-                    decoder_input = intent_id[di].unsqueeze(0).unsqueeze(1)  # Teacher forcing
-                    if decoder_input.item() == -1:
-                        break
+                decoder_output, decoder_hidden, decoder_attention = intent_decoder(
+                        decoder_input, decoder_hidden, encoder_outputs)
+                intent_pred.append(decoder_output.unsqueeze(1))
+                decoder_input = intent_idx[:, di].unsqueeze(0)  # Teacher forcing
 
-            else:
-#                 print("Do not use teacher forcing")
-                # Teacher forcing 미포함: 자신의 예측을 다음 입력으로 사용
-                for di in range(target_length):
-                    decoder_output, decoder_hidden, decoder_attention = intent_decoder(
-                        decoder_input, decoder_hidden, encoder_output)
-                    topv, topi = decoder_output.topk(1)
-                    decoder_input = topi.squeeze().detach()  # 입력으로 사용할 부분을 히스토리에서 분리
-                    intent_pred_batch.append(decoder_output)
-                    intent_label_batch.append(intent_id[di].unsqueeze(0))
-#                     intent_loss += self.intent_loss_fn(decoder_output, intent_idx[di])
-                    intent_pred[b][di] = topi.item()
-                    if decoder_input.item() == self.EOS_token:
-                        break
-            intent_pred_batch = torch.cat(intent_pred_batch)
-#             print(intent_label_batch)
-            intent_label_batch = torch.cat(intent_label_batch)
-            intent_pred_list.append(intent_pred_batch)
-            intent_label_list.append(intent_label_batch)
-            
+        else:
+#             print("Do not use teacher forcing")
+            # Teacher forcing 미포함: 자신의 예측을 다음 입력으로 사용
+            for di in range(target_length):
+                decoder_output, decoder_hidden, decoder_attention = intent_decoder(
+                    decoder_input, decoder_hidden, encoder_outputs)
+                topv, topi = decoder_output.topk(1)
+                decoder_input = topi.transpose(0, 1).detach()  # 입력으로 사용할 부분을 히스토리에서 분리
+                intent_pred.append(decoder_output.unsqueeze(1))
+
+#         print("len:{}".format(len(intent_pred)))
+#         for i in range(len(intent_pred)):
+#             print(intent_pred[i].shape)
+        intent_pred = torch.cat(intent_pred, 1)   
         intent_acc = get_token_accuracy(
             intent_idx.cpu(),
-            intent_pred.cpu(),
-            ignore_index=self.ignore_index,
+            intent_pred.max(2)[1].cpu(),
+            ignore_index=0,
         )[0]
 
         zero = torch.zeros_like(entity_idx).cpu()
@@ -388,17 +368,8 @@ class KoELECTRAGenClassifier(pl.LightningModule):
         }
 
         if optimizer_idx == 0:
-            intent_loss = 0
-#             intent_pred_list = torch.stack(intent_pred_list)
-#             intent_label_list = torch.stack(intent_label_list)
-#             print("intent_pred_list:{}".format(intent_pred_list.shape))
-#             print("intent_label_list:{}".format(intent_label_list.shape))
-            for pred, label in zip(intent_pred_list, intent_label_list):
-#                 print("pred;{}".format(pred.shape))
-#                 print("label;{}".format(label.shape))
-                loss_tmp = self.intent_loss_fn(pred.unsqueeze(0).transpose(1, 2), label.unsqueeze(0).long())
-                intent_loss += loss_tmp / label.shape[0]
-            tensorboard_logs["train/intent/loss"] = intent_loss / len(intent_pred_list)
+            intent_loss = self.intent_loss_fn(intent_pred.transpose(1, 2), intent_idx.long())
+            tensorboard_logs["train/intent/loss"] = intent_loss 
             return {
                 "loss": intent_loss,
                 "log": tensorboard_logs,
@@ -413,48 +384,32 @@ class KoELECTRAGenClassifier(pl.LightningModule):
     
     def validation_step(self, batch, batch_idx):
         self.model.eval()
-        intent_loss = 0
+        
         inputs, intent_idx, entity_idx = batch
         (input_ids, token_type_ids) = inputs
-        ## previous code
-#         intent_pred, entity_pred = self.forward(input_ids, token_type_ids)
-    
-#         intent_acc = get_accuracy(intent_idx.cpu(), intent_pred.max(1)[1].cpu())[0]
 
         intent_decoder, encoder_outputs, entity_pred = self.forward(input_ids, token_type_ids)
         batch_size = input_ids.shape[0]
         target_length = intent_idx.shape[-1]
         
-        intent_pred = torch.zeros_like(intent_idx) - 1
-        intent_loss = 0
-        intent_cnt = 0
-        for b in range(batch_size):
-            intent_id = intent_idx[b]
-            decoder_input = torch.tensor([[self.SOS_token]]).to(intent_id.device)
-            decoder_hidden = intent_decoder.initHidden(intent_id.device)
-            encoder_output = encoder_outputs[b]
-            
-#             print("decoder_input:{}".format(decoder_input.shape))
-#             print("decoder_hidden:{}".format(decoder_hidden.shape))
-#             print("encoder_output:{}".format(encoder_output.shape))
-            
-            # Teacher forcing 미포함: 자신의 예측을 다음 입력으로 사용
-            for di in range(target_length):
-                decoder_output, decoder_hidden, decoder_attention = intent_decoder(
-                        decoder_input, decoder_hidden, encoder_output)
-                topv, topi = decoder_output.topk(1)
-                decoder_input = topi.squeeze().detach()  # 입력으로 사용할 부분을 히스토리에서 분리
-                
-                intent_loss += self.intent_loss_fn(decoder_output, intent_id[di].unsqueeze(0))
-                intent_cnt += 1
-                intent_pred[b][di] = topi.item()
-                if decoder_input.item() == self.EOS_token:
-                    break
+        intent_pred = []
         
+        decoder_input = torch.tensor([[self.SOS_token] * batch_size]).to(intent_idx.device)
+        decoder_hidden = intent_decoder.initHidden(intent_idx.device, batch_size=batch_size)
+        
+        for di in range(target_length):
+            decoder_output, decoder_hidden, decoder_attention = intent_decoder(
+                        decoder_input, decoder_hidden, encoder_outputs)
+            topv, topi = decoder_output.topk(1)
+            decoder_input = topi.transpose(0, 1).detach()  # 입력으로 사용할 부분을 히스토리에서 분리
+            intent_pred.append(decoder_output.unsqueeze(1))
+        
+    
+        intent_pred = torch.cat(intent_pred, 1) 
         intent_acc = get_token_accuracy(
             intent_idx.cpu(),
-            intent_pred.cpu(),
-            ignore_index=self.ignore_index,
+            intent_pred.max(2)[1].cpu(),
+            ignore_index=0,
         )[0]
         
         zero = torch.zeros_like(entity_idx).cpu()
@@ -466,12 +421,13 @@ class KoELECTRAGenClassifier(pl.LightningModule):
             ignore_index=self.entity_o_index,
         )[0]
 
-#         intent_loss = self.intent_loss_fn(intent_pred, intent_idx.squeeze(1))
+        intent_loss = self.intent_loss_fn(
+            intent_pred.transpose(1, 2), intent_idx.long()
+        ) 
         entity_loss = self.entity_loss_fn(
             entity_pred.transpose(1, 2), entity_idx.long()
-        )  # , ignore_index=0)
+        ) 
         
-        intent_loss = intent_loss / intent_cnt
         return {
             "val_intent_acc": torch.Tensor([intent_acc]),
             "val_entity_acc": torch.Tensor([entity_acc]),

@@ -20,16 +20,17 @@ class AttnDecoderRNN(nn.Module):
         self.out = nn.Linear(self.hidden_size, self.output_size)
 
     def forward(self, input, hidden, encoder_outputs):
-        embedded = self.embedding(input).view(1, 1, -1)
+        embedded = self.embedding(input.transpose(0, 1))
         embedded = self.dropout(embedded)
+        embedded = embedded.transpose(0, 1)
 
         attn_weights = F.softmax(
             self.attn(torch.cat((embedded[0], hidden[0]), 1)), dim=1)
-        attn_applied = torch.bmm(attn_weights.unsqueeze(0),
-                                 encoder_outputs.unsqueeze(0))
+        attn_applied = torch.bmm(attn_weights.unsqueeze(1),
+                                 encoder_outputs)
 
-        output = torch.cat((embedded[0], attn_applied[0]), 1)
-        output = self.attn_combine(output).unsqueeze(0)
+        output = torch.cat((embedded, attn_applied.transpose(0, 1)), 2)
+        output = self.attn_combine(output)
 
         output = F.relu(output)
         output, hidden = self.gru(output, hidden)
@@ -37,8 +38,8 @@ class AttnDecoderRNN(nn.Module):
         output = F.log_softmax(self.out(output[0]), dim=1)
         return output, hidden, attn_weights
 
-    def initHidden(self, device):
-        return torch.zeros(1, 1, self.hidden_size).to(device)
+    def initHidden(self, device, batch_size=1):
+        return torch.zeros(1, batch_size, self.hidden_size).to(device)
 
 
 class KoElectraModel(nn.Module):
