@@ -5,14 +5,25 @@ from transformers.modeling_electra import ElectraModel, ElectraConfig, ElectraPr
 
 
 class AttnDecoderRNN(nn.Module):
-    def __init__(self, hidden_size, output_size, dropout_p=0.1, max_length=128):
+    def __init__(self, hidden_size, output_size, share_emb=None, dropout_p=0.1, max_length=128):
         super(AttnDecoderRNN, self).__init__()
         self.hidden_size = hidden_size
         self.output_size = output_size
         self.dropout_p = dropout_p
         self.max_length = max_length
+        if share_emb is not None:
+            self.share_emb = True
+        else:
+            self.share_emb = False
 
         self.embedding = nn.Embedding(self.output_size, self.hidden_size)
+        if share_emb is not None:
+            out_dim = share_emb.shape[-1]
+            self.embedding = nn.Embedding(self.output_size, out_dim)
+            self.embedding.weight.data = share_emb
+            self.dense = nn.Linear(out_dim, self.hidden_size, bias=False)
+        else:
+            self.embedding = nn.Embedding(self.output_size, self.hidden_size)
         self.attn = nn.Linear(self.hidden_size * 2, self.max_length)
         self.attn_combine = nn.Linear(self.hidden_size * 2, self.hidden_size)
         self.dropout = nn.Dropout(self.dropout_p)
@@ -20,7 +31,11 @@ class AttnDecoderRNN(nn.Module):
         self.out = nn.Linear(self.hidden_size, self.output_size)
 
     def forward(self, input, hidden, encoder_outputs):
-        embedded = self.embedding(input.transpose(0, 1))
+        if self.share_emb:
+            embedded = self.embedding(input.transpose(0, 1))
+            embedded = self.dense(embedded)
+        else:
+            embedded = self.embedding(input.transpose(0, 1))
         embedded = self.dropout(embedded)
         embedded = embedded.transpose(0, 1)
 
@@ -43,11 +58,12 @@ class AttnDecoderRNN(nn.Module):
 
 
 class KoElectraModel(nn.Module):
-    def __init__(self, intent_class_num, entity_class_num, use_generator=False):
+    def __init__(self, intent_class_num, entity_class_num, use_generator=False, share_emb=True):
         super(KoElectraModel, self).__init__()
 
         # config = ElectraConfig.from_dict(config)
         # self.bert = ElectraModel(config)
+        
         self.bert = ElectraModel.from_pretrained("monologg/koelectra-small-v2-discriminator")
         config = self.bert.config
         self.pad_idx = config.pad_token_id
@@ -56,7 +72,14 @@ class KoElectraModel(nn.Module):
         self.use_generator = use_generator
         self.dropout = nn.Dropout(config.hidden_dropout_prob)
         if use_generator:
-            self.attn_decoder = AttnDecoderRNN(config.hidden_size, config.vocab_size, dropout_p=0.1, max_length=config.embedding_size) 
+            if share_emb:
+                self.attn_decoder = AttnDecoderRNN(config.hidden_size, 
+                    config.vocab_size, dropout_p=0.1, max_length=config.embedding_size) 
+            else:
+                emb_weight = self.bert.embeddings.word_embeddings.weight.data
+                self.attn_decoder = AttnDecoderRNN(config.hidden_size, 
+                    config.vocab_size, dropout_p=0.1, max_length=config.embedding_size, share_emb=emb_weight) 
+
         else:
             self.intent_cls = nn.Linear(config.hidden_size, intent_class_num)
         ##For entity part
