@@ -27,7 +27,7 @@ def train(
     checkpoint_path=os.getcwd(),
     max_epochs=10,
     report_nm=None,
-    intent_label_len=None
+    intent_label_len=None,
     **kwargs
 ):
     gpu_num = torch.cuda.device_count()
@@ -57,12 +57,16 @@ def train(
     for key, value in kwargs.items():
         model_args[key] = value
 
-    hparams = Namespace(**model_args)
+    
     if use_intent_generator:
+        print("run intent generation model")
         model_args["use_generator"] = use_intent_generator
         model_args["intent_label_len"] = intent_label_len
+        hparams = Namespace(**model_args)
         model = KoELECTRAGenClassifier(hparams)
+        
     else:
+        hparams = Namespace(**model_args)
         model = KoELECTRAClassifier(hparams)
 
     trainer.fit(model)

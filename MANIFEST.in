@@ -1,1 +1,2 @@
 include electra_diet/assets/*.json
+include electra_diet/assets/*.txt
