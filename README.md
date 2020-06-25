@@ -30,9 +30,9 @@ It is implemented [pytorch-lightning](https://github.com/PyTorchLightning/pytorc
 
     file_path indicate markdown format NLU dataset which follow below [RASA NLU training data format](https://rasa.com/docs/rasa/nlu/training-data-format/#markdown-format)
 
-    All parameters in trainer including kwargs saved as a modeel hparams
+    All parameters in trainer including kwargs saved as a model hparams
 
-    User can check these paramters via checkpoint tensorboard logs
+    User can check these paramters via checkpoint tensorboard logs(use lightning_logs folder to user tensorboard)
     ![tensorboard log](img/tensorboard_log.PNG)
 
 2. Inference
