@@ -12,7 +12,7 @@ from torchnlp.metrics import get_accuracy, get_token_accuracy
 from pytorch_lightning import Trainer
 
 from electra_diet.dataset.electra_dataset import ElectraDataset
-from electra_diet.model import KoElectraModel
+from electra_diet.model import KoElectraModel, KoElectraGenerationModel
 
 import os, sys
 import multiprocessing
@@ -211,10 +211,9 @@ class KoELECTRAGenClassifier(pl.LightningModule):
         
         self.hparams = hparams
     
-        self.model = KoElectraModel(
-            intent_class_num=self.hparams.intent_class_num,
+        self.model = KoElectraGenerationModel(
             entity_class_num=self.hparams.entity_class_num,
-            use_generator=True
+            share_emb=True
         )
 
         self.ignore_index = -1
@@ -227,8 +226,7 @@ class KoELECTRAGenClassifier(pl.LightningModule):
         self.intent_loss_fn = nn.CrossEntropyLoss(ignore_index=self.ignore_index)
         self.entity_loss_fn = nn.CrossEntropyLoss(ignore_index=self.ignore_index)
         self.teacher_forcing_ratio = 0.6
-        self.SOS_token = 31999
-        self.EOS_token = 32000
+
 
     def forward(self, input_ids, token_type_ids):
         return self.model(input_ids, token_type_ids)
@@ -236,11 +234,17 @@ class KoELECTRAGenClassifier(pl.LightningModule):
 
     def prepare_data(self):
         if hasattr(self.hparams, 'tokenizer'):
-            self.dataset = ElectraDataset(file_path=self.hparams.file_path, tokenizer=self.hparams.tokenizer, intent_word_len=32)
+            self.dataset = ElectraDataset(file_path=self.hparams.file_path, tokenizer=self.hparams.tokenizer,
+                                            intent_label_len=self.hparams.intent_label_len)
         else:
-            self.dataset = ElectraDataset(file_path=self.hparams.file_path, tokenizer=None, intent_word_len=32)
+            self.dataset = ElectraDataset(file_path=self.hparams.file_path, tokenizer=None,
+                                             intent_label_len=self.hparams.intent_label_len)
         train_length = int(len(self.dataset) * self.train_ratio)
         
+        self.SOS_token = self.dataset.tokenizer.convert_tokens_to_ids('<s>')
+        self.EOS_token = self.dataset.tokenizer.convert_tokens_to_ids('</s>')
+
+
         # self.hparams.tokenize = self.get_tokenize()
         self.hparams.intent_label = self.get_intent_label()
         self.hparams.entity_label = self.get_entity_label()

@@ -58,7 +58,7 @@ class AttnDecoderRNN(nn.Module):
 
 
 class KoElectraModel(nn.Module):
-    def __init__(self, intent_class_num, entity_class_num, use_generator=False, share_emb=True):
+    def __init__(self, intent_class_num, entity_class_num):
         super(KoElectraModel, self).__init__()
 
         # config = ElectraConfig.from_dict(config)
@@ -69,19 +69,50 @@ class KoElectraModel(nn.Module):
         self.pad_idx = config.pad_token_id
         ##For intent part
         self.intent_class_num = intent_class_num
-        self.use_generator = use_generator
         self.dropout = nn.Dropout(config.hidden_dropout_prob)
-        if use_generator:
-            if share_emb:
-                self.attn_decoder = AttnDecoderRNN(config.hidden_size, 
-                    config.vocab_size, dropout_p=0.1, max_length=config.embedding_size) 
-            else:
-                emb_weight = self.bert.embeddings.word_embeddings.weight.data
-                self.attn_decoder = AttnDecoderRNN(config.hidden_size, 
-                    config.vocab_size, dropout_p=0.1, max_length=config.embedding_size, share_emb=emb_weight) 
+        self.intent_cls = nn.Linear(config.hidden_size, intent_class_num)
+        ##For entity part
+        self.entity_cls = nn.Linear(config.hidden_size, entity_class_num)
 
+
+    def forward(self, input_ids, token_type_ids):
+        attention_mask = input_ids.ne(self.pad_idx).float()
+        outputs = self.bert(
+            input_ids=input_ids,
+            token_type_ids=token_type_ids,
+            attention_mask=attention_mask
+        )
+
+        outputs = outputs[0]
+
+        entity_output = self.entity_cls(self.dropout(outputs))
+
+        cls_outout = self.intent_cls(self.dropout(outputs[:,0,:]))
+        return cls_outout, entity_output
+
+
+class KoElectraGenerationModel(nn.Module):
+    def __init__(self, entity_class_num, share_emb=True):
+        super(KoElectraGenerationModel, self).__init__()
+
+        # config = ElectraConfig.from_dict(config)
+        # self.bert = ElectraModel(config)
+        
+        self.bert = ElectraModel.from_pretrained("monologg/koelectra-small-v2-discriminator")
+        config = self.bert.config
+        self.pad_idx = config.pad_token_id
+        self.dropout = nn.Dropout(config.hidden_dropout_prob)
+
+        ##For intent part
+        if share_emb:
+            self.attn_decoder = AttnDecoderRNN(config.hidden_size, 
+                config.vocab_size, dropout_p=0.1, max_length=config.embedding_size) 
         else:
-            self.intent_cls = nn.Linear(config.hidden_size, intent_class_num)
+            emb_weight = self.bert.embeddings.word_embeddings.weight.data
+            self.attn_decoder = AttnDecoderRNN(config.hidden_size, 
+                config.vocab_size, dropout_p=0.1, max_length=config.embedding_size, share_emb=emb_weight) 
+
+
         ##For entity part
         self.entity_cls = nn.Linear(config.hidden_size, entity_class_num)
 
@@ -99,10 +130,5 @@ class KoElectraModel(nn.Module):
 
         entity_output = self.entity_cls(self.dropout(outputs))
 
-        if self.use_generator:
-            decoder = self.attn_decoder
-            return decoder, hidden_state, entity_output
-
-        else:
-            cls_outout = self.intent_cls(self.dropout(outputs[:,0,:]))
-            return cls_outout, entity_output
+        decoder = self.attn_decoder
+        return decoder, hidden_state, entity_output

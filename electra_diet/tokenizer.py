@@ -4,8 +4,10 @@ import json
 from transformers import ElectraTokenizer
 from pathlib import Path
 
-tokenizer = ElectraTokenizer.from_pretrained("monologg/koelectra-small-v2-discriminator")
+# tokenizer = ElectraTokenizer.from_pretrained("monologg/koelectra-small-v2-discriminator")
 path = Path(__file__).parent
+vocab_file = os.path.join(path, 'assets/vocab.txt')
+tokenizer = ElectraTokenizer(vocab_file=vocab_file, do_lower_case=False, do_basic_tokenize=False)
 # print(path)
 with open(os.path.join(path, 'assets/token_converter.json')) as f:
     token_conver = json.load(f)

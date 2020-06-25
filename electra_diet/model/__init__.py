@@ -1,1 +1,1 @@
-from .model import KoElectraModel
+from .model import KoElectraModel, KoElectraGenerationModel

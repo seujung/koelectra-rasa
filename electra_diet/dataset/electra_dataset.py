@@ -37,11 +37,11 @@ class ElectraDataset(torch.utils.data.Dataset):
         intent_dict=None,
         entity_dict=None,
         tag_type='bio',
-        intent_word_len=None,
-        entity_EOS_token = 32000
+        intent_label_len=None,
+        intent_EOS_token='</s>'
     ):
-        self.intent_word_len = intent_word_len
-        self.entity_EOS_token = entity_EOS_token
+        self.intent_label_len = intent_label_len
+
         self.intent_dict = {}
         self.entity_dict_bio = {}
         self.entity_dict_bio[
@@ -63,6 +63,7 @@ class ElectraDataset(torch.utils.data.Dataset):
             self.tokenizer = tokenizer
         
         self.pad_token_id = self.tokenizer.pad_token_id
+        self.intent_EOS_token = self.tokenizer.convert_tokens_to_ids(intent_EOS_token)
         
         markdown_lines = open(file_path, encoding="utf-8").readlines()
 
@@ -204,9 +205,9 @@ class ElectraDataset(torch.utils.data.Dataset):
             return (tokens.numpy(), segment_ids.numpy())
 
     def gen_intent_word(self, intent_word):
-        max_len = self.intent_word_len
+        max_len = self.intent_label_len
         intent_word_token = self.tokenizer.encode(intent_word)[1:-1]
-        intent_word_token.append(self.entity_EOS_token)
+        intent_word_token.append(self.intent_EOS_token)
         intent_word_token = np.array(intent_word_token)
         if intent_word_token.shape[0] < max_len:
             additional_len = max_len - intent_word_token.shape[0]
@@ -224,7 +225,7 @@ class ElectraDataset(torch.utils.data.Dataset):
     def __getitem__(self, idx):
         (tokens, segment_ids) = self.tokenize(self.dataset[idx]["text"])
         valid_length = len(self.tokenizer.encode(self.dataset[idx]["text"]))
-        if self.intent_word_len is None:
+        if self.intent_label_len is None:
             intent_idx = torch.tensor([self.dataset[idx]["intent_idx"]])
         else:
 #             print(self.dataset[idx]["intent"])

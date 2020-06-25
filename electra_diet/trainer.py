@@ -20,14 +20,14 @@ def train(
     seq_len=128,
     intent_class_num=None,
     entity_class_num=None,
-    use_generator=False,
+    use_intent_generator=False,
     optimizer="AdamW",
     intent_optimizer_lr=1e-5,
     entity_optimizer_lr=2e-5,
     checkpoint_path=os.getcwd(),
     max_epochs=10,
     report_nm=None,
-    #tokenizer=None,
+    intent_label_len=None
     **kwargs
 ):
     gpu_num = torch.cuda.device_count()
@@ -49,7 +49,7 @@ def train(
     model_args["seq_len"] = seq_len
     model_args["intent_class_num"] = intent_class_num
     model_args["entity_class_num"] = entity_class_num
-    model_args["use_generator"] = use_generator
+    model_args["use_generator"] = use_intent_generator
     model_args["optimizer"] = optimizer
     model_args["intent_optimizer_lr"] = intent_optimizer_lr
     model_args["entity_optimizer_lr"] = entity_optimizer_lr
@@ -58,8 +58,11 @@ def train(
         model_args[key] = value
 
     hparams = Namespace(**model_args)
-
-#     model = KoELECTRAClassifier(hparams)
-    model = KoELECTRAGenClassifier(hparams)
+    if use_intent_generator:
+        model_args["use_generator"] = use_intent_generator
+        model_args["intent_label_len"] = intent_label_len
+        model = KoELECTRAGenClassifier(hparams)
+    else:
+        model = KoELECTRAClassifier(hparams)
 
     trainer.fit(model)

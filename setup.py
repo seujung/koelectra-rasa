@@ -5,7 +5,7 @@ with open("requirements.txt") as f:
 
 setup(
     name="electra_diet",
-    version="0.1",
+    version="0.2",
     description="Koelecta based intent / entity model",
     author="seujung",
     install_requires=[],
