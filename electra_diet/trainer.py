@@ -26,6 +26,7 @@ def train(
     checkpoint_path=os.getcwd(),
     max_epochs=10,
     report_nm=None,
+    lower_text=True,
     #tokenizer=None,
     **kwargs
 ):
@@ -48,6 +49,7 @@ def train(
     model_args["optimizer"] = optimizer
     model_args["intent_optimizer_lr"] = intent_optimizer_lr
     model_args["entity_optimizer_lr"] = entity_optimizer_lr
+    model_args['lower_text'] = lower_text
 
     for key, value in kwargs.items():
         model_args[key] = value

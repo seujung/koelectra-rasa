@@ -13,8 +13,10 @@ with open(os.path.join(path, 'assets/token_converter.json')) as f:
 def get_tokenizer():
     return tokenizer
 
-def tokenize(text: str, seq_len: int, padding: bool = True, return_tensor: bool = True):
-
+def tokenize(text: str, seq_len: int, padding: bool = True, return_tensor: bool = True, lower_text=True):
+    if lower_text:
+        text = text.lower()
+        
     pad_token_id = tokenizer.pad_token_id
     tokens = tokenizer.encode(text)
     ##consider single token only

@@ -36,8 +36,10 @@ class ElectraDataset(torch.utils.data.Dataset):
         tokenizer=None,
         intent_dict=None,
         entity_dict=None,
+        lower_text=True,
         tag_type='bio'
-    ):
+    ):  
+        self.lower_text = lower_text
         self.intent_dict = {}
         self.entity_dict_bio = {}
         self.entity_dict_bio[
@@ -175,7 +177,10 @@ class ElectraDataset(torch.utils.data.Dataset):
             print(f"Entities: {self.entity_dict}")
 
 
-    def tokenize(self, text: str, padding: bool = True, return_tensor: bool = True):
+    def tokenize(self, text: str, padding: bool = True, return_tensor: bool = True, lower_text=True):
+        if lower_text:
+            text = text.lower()
+            
         tokens = self.tokenizer.encode(text)
         ##consider single token only
         segment_ids = [0] * len(tokens)
@@ -203,7 +208,7 @@ class ElectraDataset(torch.utils.data.Dataset):
         return len(self.dataset)
 
     def __getitem__(self, idx):
-        (tokens, segment_ids) = self.tokenize(self.dataset[idx]["text"])
+        (tokens, segment_ids) = self.tokenize(text=self.dataset[idx]["text"], lower_text=self.lower_text)
         valid_length = len(self.tokenizer.encode(self.dataset[idx]["text"]))
         intent_idx = torch.tensor([self.dataset[idx]["intent_idx"]])
 
