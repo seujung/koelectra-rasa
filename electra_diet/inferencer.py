@@ -31,12 +31,15 @@ class Inferencer:
         logging.info(self.entity_dict)
 
     def inference(self, text: str, intent_topk=5):
+        if self.model.hparams.lower_text:
+            text = text.lower()
+
         if self.model is None:
             raise ValueError(
                 "model is not loaded, first call load_model(checkpoint_path)"
             )
         tokenizer = get_tokenizer()
-        tokens_tmp = tokenize(text, self.model.hparams.seq_len)
+        tokens_tmp = tokenize(text, self.model.hparams.seq_len, lower_text=self.model.hparams.lower_text)
         tokens = []
         for t in tokens_tmp:
             tokens.append(t.unsqueeze(0))
