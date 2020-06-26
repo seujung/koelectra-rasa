@@ -106,11 +106,11 @@ class KoElectraGenerationModel(nn.Module):
         ##For intent part
         if share_emb:
             self.attn_decoder = AttnDecoderRNN(config.hidden_size, 
-                config.vocab_size, dropout_p=0.1, max_length=config.embedding_size) 
+                config.vocab_size, dropout_p=0.1, max_length=config.embedding_size, share_emb=emb_weight) 
         else:
             emb_weight = self.bert.embeddings.word_embeddings.weight.data
             self.attn_decoder = AttnDecoderRNN(config.hidden_size, 
-                config.vocab_size, dropout_p=0.1, max_length=config.embedding_size, share_emb=emb_weight) 
+                config.vocab_size, dropout_p=0.1, max_length=config.embedding_size) 
 
 
         ##For entity part
