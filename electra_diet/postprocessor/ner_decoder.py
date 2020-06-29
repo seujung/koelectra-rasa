@@ -76,5 +76,5 @@ class NERDecoder(object):
                 pass
         
         return entities
-                
+
 
