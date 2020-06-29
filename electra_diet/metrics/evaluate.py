@@ -6,7 +6,70 @@ from torch.utils.data import DataLoader
 # from electra_diet.metrics import show_rasa_metrics
 from electra_diet.postprocessor import NERDecoder
 from electra_diet.tokenizer import get_tokenizer
+from electra_diet.postprocessor.intent_decoder import IntentDecoder, convert_intent_to_id
 from .metrics import show_rasa_metrics, confusion_matrix, pred_report, show_entity_metrics
+
+def show_intent_generation_report(dataset, pl_module, file_name=None, output_dir=None, cuda=True):
+    ##generate rasa performance matrics
+    tokenizer = get_tokenizer()
+    text = []
+    preds = np.array([])
+    targets = np.array([])
+    logits = np.array([])
+    label_dict = dict()
+    pl_module.model.eval()
+    for k, v in pl_module.intent_dict.items():
+        label_dict[int(k)] = v
+    dataloader = DataLoader(dataset, batch_size=32)
+
+    for batch in tqdm(dataloader, desc="load intent dataset"):
+        inputs, intent_idx, entity_idx = batch
+        (input_ids, token_type_ids) = inputs
+        token = get_token_to_text(tokenizer, input_ids)
+        text.extend(token)
+        model =  pl_module.model
+        target_length = intent_idx.shape[-1]
+
+        if cuda > 0:
+            input_ids = input_ids.cuda()
+            token_type_ids = token_type_ids.cuda()
+            model = model.cuda()
+        intent_decoder, encoder_outputs, entity_pred = model.forward(input_ids, token_type_ids)
+
+        
+        decoder = IntentDecoder(target_length, intent_decoder, encoder_outputs)
+        intent_results = decoder.process()
+        logit = convert_intent_to_id(intent_results, label_dict, fallback_intent='intent_미지원')
+        logits = np.append(logits, logit.max(-1))
+    
+    preds = preds.astype(int)
+    targets = targets.astype(int)
+
+    labels = list(label_dict.keys())
+    target_names = list(label_dict.values())
+    
+    report = show_rasa_metrics(pred=preds, label=targets, labels=labels, target_names=target_names, file_name=file_name, output_dir=output_dir)
+    ##generate confusion matrix
+    inequal_index = np.where(preds != targets)[0]
+    inequal_dict = dict()
+    for i in range(inequal_index.shape[0]):
+        idx = inequal_index[i].item()
+        pred = preds[idx]
+        if label_dict[pred] not in inequal_dict.keys():
+            inequal_dict[label_dict[pred]] = []
+        tmp_dict = dict()
+        tmp_dict['target'] = label_dict[targets[idx]]
+        tmp_dict['prob'] = round(logits[idx], 3)
+        tmp_dict['text'] = text[idx]
+        inequal_dict[label_dict[pred]].append(tmp_dict)
+    
+    cm_file_name = file_name.replace('.', '_cm.')
+    cm_matrix = confusion_matrix(
+            pred=preds, label=targets, label_index=label_dict, file_name=cm_file_name, output_dir=None)
+    
+    pred_report(inequal_dict, cm_matrix, file_name=cm_file_name.replace(
+            '.json', '.md'),  output_dir=output_dir)
+
 
 def show_intent_report(dataset, pl_module, file_name=None, output_dir=None, cuda=True):
     ##generate rasa performance matrics
@@ -69,6 +132,7 @@ def show_intent_report(dataset, pl_module, file_name=None, output_dir=None, cuda
     
     pred_report(inequal_dict, cm_matrix, file_name=cm_file_name.replace(
             '.json', '.md'),  output_dir=output_dir)
+
 
 def show_entity_report(dataset, pl_module, file_name=None, output_dir=None, cuda=True):
     

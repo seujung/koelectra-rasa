@@ -1,4 +1,5 @@
 import torch
+import numpy as np
 from electra_diet.tokenizer import get_tokenizer
 
 class IntentDecoder(object):
@@ -41,3 +42,11 @@ class IntentDecoder(object):
 
 
 
+def convert_intent_to_id(intent_results, intent_labels, fallback_intent='intent_미지원'):
+    intent_label = []
+    for intent in intent_results:
+        intent_label.append(intent_labels[intent])
+    
+    return np.array(intent_label)
+
+    
