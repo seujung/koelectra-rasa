@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 from electra_diet.pl_model import KoELECTRAClassifier
+from electra_diet.postprocessor.intent_decoder import IntentDecoder
 from electra_diet.tokenizer import tokenize, get_tokenizer, delete_josa
 import re
 
@@ -29,6 +30,8 @@ class Inferencer:
         logging.info('entity dictionary')
         logging.info(self.entity_dict)
 
+        self.use_generator = self.model.hparams.use_generator
+
     def inference(self, text: str, intent_topk=5):
         if self.model is None:
             raise ValueError(
@@ -41,23 +44,33 @@ class Inferencer:
             tokens.append(t.unsqueeze(0))
 
         tokens = tuple(tokens)
-        
-        intent_result, entity_result = self.model.forward(*tokens)
+        if self.use_generator:
+            target_length = self.model.hparams.intent_laben_len
+            intent_decoder, encoder_outputs, entity_pred = self.model.forward(*tokens)
+            decoder = IntentDecoder(target_length, intent_decoder, encoder_outputs)
+            intent_results = decoder.process()
+            intent = {}
+            intent_ranking = []
+            intent['name'] = intent_results[0]
+            intent['confidence'] = 0.999
 
-        # mapping intent result
-        rank_values, rank_indicies = torch.topk(
-            nn.Softmax(dim=1)(intent_result)[0], k=intent_topk
-        )
-        intent = {}
-        intent_ranking = []
-        for i, (value, index) in enumerate(
-            list(zip(rank_values.tolist(), rank_indicies.tolist()))
-        ):
-            intent_ranking.append({"confidence": value, "name": self.intent_dict[index]})
+        else:
+            intent_result, entity_result = self.model.forward(*tokens)
 
-            if i == 0:
-                intent["name"] = self.intent_dict[index]
-                intent["confidence"] = value
+            # mapping intent result
+            rank_values, rank_indicies = torch.topk(
+                nn.Softmax(dim=1)(intent_result)[0], k=intent_topk
+            )
+            intent = {}
+            intent_ranking = []
+            for i, (value, index) in enumerate(
+                list(zip(rank_values.tolist(), rank_indicies.tolist()))
+            ):
+                intent_ranking.append({"confidence": value, "name": self.intent_dict[index]})
+
+                if i == 0:
+                    intent["name"] = self.intent_dict[index]
+                    intent["confidence"] = value
 
         # mapping entity result
         entities = []
