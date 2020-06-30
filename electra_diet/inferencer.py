@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 from electra_diet.pl_model import KoELECTRAClassifier, KoELECTRAGenClassifier
-from electra_diet.postprocessor.intent_decoder import IntentDecoder
+from electra_diet.postprocessor.intent_decoder import IntentDecoder, convert_intent_to_id
 from electra_diet.tokenizer import tokenize, get_tokenizer, delete_josa
 import re
 
@@ -12,10 +12,10 @@ intent_dict = {}
 entity_dict = {}
 
 class Inferencer:
-    def __init__(self, checkpoint_path: str, use_generator=False):
-        if use_generator:
+    def __init__(self, checkpoint_path: str):
+        try:
             self.model = KoELECTRAGenClassifier.load_from_checkpoint(checkpoint_path)
-        else:
+        except:
             self.model = KoELECTRAClassifier.load_from_checkpoint(checkpoint_path)
         self.model.model.eval()
 
@@ -33,7 +33,7 @@ class Inferencer:
         logging.info('entity dictionary')
         logging.info(self.entity_dict)
 
-        self.use_generator = use_generator
+        self.use_generator = self.model.hparams.use_generator
 
     def inference(self, text: str, intent_topk=5):
         if self.model is None:
@@ -52,10 +52,13 @@ class Inferencer:
             intent_decoder, encoder_outputs, entity_result = self.model.forward(*tokens)
             decoder = IntentDecoder(target_length, intent_decoder, encoder_outputs)
             intent_results = decoder.process()
+            
+            index = convert_intent_to_id(intent_results, self.intent_dict, fallback_intent='intent_미지원')
             intent = {}
             intent_ranking = []
-            intent['name'] = intent_results[0]
-            intent['confidence'] = 0.999
+            intent['name'] = self.intent_dict[index[0].item()]
+            intent['confidence'] = 1.0
+            intent_ranking.append(intent)
 
         else:
             intent_result, entity_result = self.model.forward(*tokens)
