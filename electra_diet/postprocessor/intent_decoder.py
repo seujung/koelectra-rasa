@@ -1,6 +1,7 @@
 import torch
 import numpy as np
 from electra_diet.tokenizer import get_tokenizer
+from fuzzywuzzy import process
 
 class IntentDecoder(object):
 
@@ -42,10 +43,30 @@ class IntentDecoder(object):
 
 
 
-def convert_intent_to_id(intent_results, intent_labels, fallback_intent='intent_미지원'):
+def convert_intent_to_id(intent_results, intent_labels, fallback_intent='intent_미지원', cutoff=0.9):
     intent_label = []
+    labels = dict()
+    
+    prefix = 'intent_'
+    intent_list = list(intent_labels.values())
+    for i, intent in enumerate(intent_list):
+        intent_list[i] = intent.replace(prefix, '')
+    
+    for k, v in intent_labels.items():
+        labels[v] = int(k)
+#     print(labels)
+    
     for intent in intent_results:
-        intent_label.append(intent_labels[intent])
+        try:
+            intent_label.append(labels[intent])
+        except:
+            ratio = process.extract(intent.replace(prefix, ''), intent_list, limit=5)
+            select_intent = ratio[0]
+            if select_intent[1] / 100 >= cutoff:
+                rep_intent = prefix + select_intent[0]
+                intent_label.append(labels[rep_intent])
+            else:
+                intent_label.append(labels[fallback_intent])
     
     return np.array(intent_label)
 

@@ -1,7 +1,7 @@
 import os
 import glob
 from pytorch_lightning.callbacks.base import Callback
-from electra_diet.metrics import show_intent_report, show_entity_report
+from electra_diet.metrics import show_intent_report, show_entity_report, show_intent_generation_report
 from electra_diet.dataset.electra_dataset import ElectraDataset
 
 class PerfCallback(Callback):
@@ -32,5 +32,6 @@ class PerfCallback(Callback):
         self.output_dir = os.path.join(self.output_dir, 'results')
         intent_report_nm = self.report_nm.replace('.', '_intent.')
         entity_report_nm = self.report_nm.replace('.', '_entity.')
+#         show_intent_report(dataset, pl_module, file_name=intent_report_nm, output_dir=self.output_dir, cuda=self.cuda)
         show_intent_report(dataset, pl_module, file_name=intent_report_nm, output_dir=self.output_dir, cuda=self.cuda)
         show_entity_report(dataset, pl_module, file_name=entity_report_nm, output_dir=self.output_dir, cuda=self.cuda)

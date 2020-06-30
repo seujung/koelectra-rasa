@@ -17,9 +17,11 @@ def show_intent_generation_report(dataset, pl_module, file_name=None, output_dir
     targets = np.array([])
     logits = np.array([])
     label_dict = dict()
+    label_idx = dict()
     pl_module.model.eval()
     for k, v in pl_module.intent_dict.items():
         label_dict[int(k)] = v
+        label_idx[v] = int(k)
     dataloader = DataLoader(dataset, batch_size=32)
 
     for batch in tqdm(dataloader, desc="load intent dataset"):
@@ -39,11 +41,33 @@ def show_intent_generation_report(dataset, pl_module, file_name=None, output_dir
         
         decoder = IntentDecoder(target_length, intent_decoder, encoder_outputs)
         intent_results = decoder.process()
-        logit = convert_intent_to_id(intent_results, label_dict, fallback_intent='intent_미지원')
-        logits = np.append(logits, logit.max(-1))
-    
+        y_label = convert_intent_to_id(intent_results, label_dict, fallback_intent='intent_미지원')
+        preds = np.append(preds, y_label)
+        
+        target = []
+        for idx in intent_idx:
+            idx_target = tokenizer.decode(idx, skip_special_tokens=True)
+            idx_target = idx_target.replace('</s>', '')
+            idx_target = idx_target.replace(' ', '')
+            target.append(label_idx[idx_target])
+        targets = np.append(targets, np.array(target))
+        
+        logit = np.zeros((32, len(label_dict.keys())))
+        try:
+            for i, t in enumerate(y_label):
+                logit[i][t] = 1
+        except:
+            pass
+            
+        logits = np.append(logits, logit)
+        
+    print("===========================")
+    print(preds[0:20])
     preds = preds.astype(int)
     targets = targets.astype(int)
+    
+    
+#     print(targets[0:20])
 
     labels = list(label_dict.keys())
     target_names = list(label_dict.values())
