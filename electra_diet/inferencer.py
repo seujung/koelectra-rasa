@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from electra_diet.pl_model import KoELECTRAClassifier
+from electra_diet.pl_model import KoELECTRAClassifier, KoELECTRAGenClassifier
 from electra_diet.postprocessor.intent_decoder import IntentDecoder
 from electra_diet.tokenizer import tokenize, get_tokenizer, delete_josa
 import re
@@ -12,8 +12,11 @@ intent_dict = {}
 entity_dict = {}
 
 class Inferencer:
-    def __init__(self, checkpoint_path: str):
-        self.model = KoELECTRAClassifier.load_from_checkpoint(checkpoint_path)
+    def __init__(self, checkpoint_path: str, use_generator=False):
+        if use_generator:
+            self.model = KoELECTRAGenClassifier.load_from_checkpoint(checkpoint_path)
+        else:
+            self.model = KoELECTRAClassifier.load_from_checkpoint(checkpoint_path)
         self.model.model.eval()
 
         self.intent_dict = {}
@@ -30,7 +33,7 @@ class Inferencer:
         logging.info('entity dictionary')
         logging.info(self.entity_dict)
 
-        self.use_generator = self.model.hparams.use_generator
+        self.use_generator = use_generator
 
     def inference(self, text: str, intent_topk=5):
         if self.model is None:
