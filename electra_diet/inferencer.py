@@ -48,8 +48,8 @@ class Inferencer:
 
         tokens = tuple(tokens)
         if self.use_generator:
-            target_length = self.model.hparams.intent_laben_len
-            intent_decoder, encoder_outputs, entity_pred = self.model.forward(*tokens)
+            target_length = self.model.hparams.intent_label_len
+            intent_decoder, encoder_outputs, entity_result = self.model.forward(*tokens)
             decoder = IntentDecoder(target_length, intent_decoder, encoder_outputs)
             intent_results = decoder.process()
             intent = {}
