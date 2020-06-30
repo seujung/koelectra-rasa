@@ -114,8 +114,8 @@ class KoELECTRAClassifier(pl.LightningModule):
             [intent_optimizer, entity_optimizer],
             # [StepLR(intent_optimizer, step_size=1),StepLR(entity_optimizer, step_size=1),],
             [
-                ReduceLROnPlateau(intent_optimizer, patience=1),
-                ReduceLROnPlateau(entity_optimizer, patience=1),
+                ReduceLROnPlateau(intent_optimizer, patience=1, factor=0.3),
+                ReduceLROnPlateau(entity_optimizer, patience=1, factor=0.3),
             ],
         )
 

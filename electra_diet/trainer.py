@@ -11,6 +11,15 @@ import torch
 from torch.utils.data import DataLoader
 
 from electra_diet.eval import PerfCallback
+from pytorch_lightning.callbacks.early_stopping import EarlyStopping
+
+early_stop_callback = EarlyStopping(
+   monitor='val_accuracy',
+   min_delta=0.00,
+   patience=3,
+   verbose=False,
+   mode='max'
+)
 
 def train(
     file_path,
@@ -27,14 +36,30 @@ def train(
     max_epochs=10,
     report_nm=None,
     lower_text=True,
-    #tokenizer=None,
+    early_stop=True,
     **kwargs
 ):
     gpu_num = torch.cuda.device_count()
-
-    trainer = Trainer(
-        default_root_dir=checkpoint_path, max_epochs=max_epochs, gpus=gpu_num, callbacks=[PerfCallback(gpu_num=gpu_num, report_nm=report_nm, root_path=checkpoint_path)]
-    )
+    if early_stop:
+        early_stop_callback = EarlyStopping(
+                               monitor='val_accuracy',
+                               min_delta=0.00,
+                               patience=3,
+                               verbose=False,
+                               mode='max'
+                            )
+        
+        trainer = Trainer(
+            default_root_dir=checkpoint_path, max_epochs=max_epochs, gpus=gpu_num,
+            callbacks=[PerfCallback(gpu_num=gpu_num, report_nm=report_nm, root_path=checkpoint_path)],
+            early_stop_callback=early_stop_callback
+        )
+        
+    else:
+        trainer = Trainer(
+            default_root_dir=checkpoint_path, max_epochs=max_epochs, gpus=gpu_num, callbacks=[PerfCallback(gpu_num=gpu_num, report_nm=report_nm, root_path=checkpoint_path)]
+        )
+        
 
     model_args = {}
 
