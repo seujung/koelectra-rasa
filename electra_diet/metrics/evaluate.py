@@ -36,7 +36,7 @@ def show_intent_generation_report(dataset, pl_module, file_name=None, output_dir
             input_ids = input_ids.cuda()
             token_type_ids = token_type_ids.cuda()
             model = model.cuda()
-        intent_decoder, encoder_outputs, entity_pred = model.forward(input_ids, token_type_ids)
+        (intent_decoder, encoder_outputs), entity_pred = model.forward(input_ids, token_type_ids)
 
         
         decoder = IntentDecoder(target_length, intent_decoder, encoder_outputs)
@@ -199,21 +199,7 @@ def show_entity_report(dataset, pl_module, file_name=None, output_dir=None, cuda
             targets.append(decode_original)
             preds.append(decode_pred)
 
-            # for origin in decode_original:
-            #     labels.add(origin['entity'])
-            #     find_idx = 0
-            #     for pred in decode_pred:
-            #         if origin['start'] == pred['start'] and origin['end'] == pred['end']:
-            #             preds.append(origin['entity'])
-            #             targets.append(origin['entity'])
-            #             find_idx += 1
-            #     if find_idx == 0:
-            #          preds.append('No_Entity')
-            #          targets.append(origin['entity'])
-
-
     report = show_entity_metrics(pred=preds, label=targets, file_name=file_name, output_dir=output_dir)
-    # report = show_rasa_metrics(pred=preds, label=targets, file_name=file_name, output_dir=output_dir)
 
 
 def get_token_to_text(tokenizer, data):

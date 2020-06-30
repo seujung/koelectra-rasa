@@ -309,7 +309,7 @@ class KoELECTRAGenClassifier(pl.LightningModule):
         inputs, intent_idx, entity_idx = batch
         (input_ids, token_type_ids) = inputs
 
-        intent_decoder, encoder_outputs, entity_pred = self.forward(input_ids, token_type_ids)
+        (intent_decoder, encoder_outputs), entity_pred = self.forward(input_ids, token_type_ids)
         batch_size = input_ids.shape[0]
         target_length = intent_idx.shape[-1]
                 
@@ -392,7 +392,7 @@ class KoELECTRAGenClassifier(pl.LightningModule):
         inputs, intent_idx, entity_idx = batch
         (input_ids, token_type_ids) = inputs
 
-        intent_decoder, encoder_outputs, entity_pred = self.forward(input_ids, token_type_ids)
+        (intent_decoder, encoder_outputs), entity_pred = self.forward(input_ids, token_type_ids)
         batch_size = input_ids.shape[0]
         target_length = intent_idx.shape[-1]
         

@@ -131,4 +131,4 @@ class KoElectraGenerationModel(nn.Module):
         entity_output = self.entity_cls(self.dropout(outputs))
 
         decoder = self.attn_decoder
-        return decoder, hidden_state, entity_output
+        return (decoder, hidden_state), entity_output
