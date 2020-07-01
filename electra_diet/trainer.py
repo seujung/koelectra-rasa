@@ -49,7 +49,7 @@ def train(
                                min_delta=0.00,
                                patience=3,
                                verbose=False,
-                               mode='max'
+                               mode='min'
                             )
         
         trainer = Trainer(
