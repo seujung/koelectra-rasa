@@ -42,7 +42,7 @@ def train(
     gpu_num = torch.cuda.device_count()
     if early_stop:
         early_stop_callback = EarlyStopping(
-                               monitor='val_accuracy',
+                               monitor='val_loss',
                                min_delta=0.00,
                                patience=3,
                                verbose=False,
