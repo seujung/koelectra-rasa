@@ -52,9 +52,11 @@ class KoELECTRAClassifier(pl.LightningModule):
 
     def prepare_data(self):
         if hasattr(self.hparams, 'tokenizer'):
-            self.dataset = ElectraDataset(file_path=self.hparams.file_path, tokenizer=self.hparams.tokenizer)
+            self.dataset = ElectraDataset(file_path=self.hparams.file_path,
+                tokenizer=self.hparams.tokenizer, lower_text=self.hparams.lower_text)
         else:
-            self.dataset = ElectraDataset(file_path=self.hparams.file_path, tokenizer=None)
+            self.dataset = ElectraDataset(file_path=self.hparams.file_path,
+                tokenizer=None, lower_text=self.hparams.lower_text)
         train_length = int(len(self.dataset) * self.train_ratio)
         
         # self.hparams.tokenize = self.get_tokenize()
@@ -110,8 +112,8 @@ class KoELECTRAClassifier(pl.LightningModule):
             [intent_optimizer, entity_optimizer],
             # [StepLR(intent_optimizer, step_size=1),StepLR(entity_optimizer, step_size=1),],
             [
-                ReduceLROnPlateau(intent_optimizer, patience=1),
-                ReduceLROnPlateau(entity_optimizer, patience=1),
+                ReduceLROnPlateau(intent_optimizer, patience=1, factor=0.3),
+                ReduceLROnPlateau(entity_optimizer, patience=1, factor=0.3),
             ],
         )
 

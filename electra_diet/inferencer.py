@@ -3,6 +3,7 @@ import torch.nn as nn
 from electra_diet.pl_model import KoELECTRAClassifier, KoELECTRAGenClassifier
 from electra_diet.postprocessor.intent_decoder import IntentDecoder, convert_intent_to_id
 from electra_diet.tokenizer import tokenize, get_tokenizer, delete_josa
+from electra_diet.postprocessor import post_process
 import re
 
 import logging
@@ -37,12 +38,20 @@ class Inferencer:
 
 
     def inference(self, text: str, intent_topk=5):
+        try:
+            if self.model.hparams.lower_text:
+                text = text.lower()
+            lower_text = self.model.hparams.lower_text
+        except:
+            lower_text = False
+
+
         if self.model is None:
             raise ValueError(
                 "model is not loaded, first call load_model(checkpoint_path)"
             )
         tokenizer = get_tokenizer()
-        tokens_tmp = tokenize(text, self.model.hparams.seq_len)
+        tokens_tmp = tokenize(text, self.model.hparams.seq_len, lower_text=lower_text)
         tokens = []
         for t in tokens_tmp:
             tokens.append(t.unsqueeze(0))
@@ -150,8 +159,8 @@ class Inferencer:
             except:
                 pass
 
-
-
+        ##post processor
+        intent, intent_ranking, entities = post_process(intent, intent_ranking, entities)
 
         return {
             "text": text,

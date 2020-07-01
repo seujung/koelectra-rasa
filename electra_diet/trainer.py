@@ -11,6 +11,15 @@ import torch
 from torch.utils.data import DataLoader
 
 from electra_diet.eval import PerfCallback
+from pytorch_lightning.callbacks.early_stopping import EarlyStopping
+
+early_stop_callback = EarlyStopping(
+   monitor='val_accuracy',
+   min_delta=0.00,
+   patience=3,
+   verbose=False,
+   mode='max'
+)
 
 def train(
     file_path,
@@ -28,16 +37,32 @@ def train(
     max_epochs=10,
     report_nm=None,
     intent_label_len=None,
+    lower_text=True,
+    early_stop=True,
     **kwargs
 ):
-    gpu_num = torch.cuda.device_count()
 
-#     trainer = Trainer(
-#         default_root_dir=checkpoint_path, max_epochs=max_epochs, gpus=gpu_num, callbacks=[PerfCallback(gpu_num=gpu_num, report_nm=report_nm, root_path=checkpoint_path)]
-#     )
-    trainer = Trainer(
-        default_root_dir=checkpoint_path, max_epochs=max_epochs, gpus=gpu_num
-    )
+    gpu_num = torch.cuda.device_count()
+    if early_stop:
+        early_stop_callback = EarlyStopping(
+                               monitor='val_loss',
+                               min_delta=0.00,
+                               patience=3,
+                               verbose=False,
+                               mode='max'
+                            )
+        
+        trainer = Trainer(
+            default_root_dir=checkpoint_path, max_epochs=max_epochs, gpus=gpu_num,
+            callbacks=[PerfCallback(gpu_num=gpu_num, report_nm=report_nm, root_path=checkpoint_path)],
+            early_stop_callback=early_stop_callback
+        )
+        
+    else:
+        trainer = Trainer(
+            default_root_dir=checkpoint_path, max_epochs=max_epochs, gpus=gpu_num, callbacks=[PerfCallback(gpu_num=gpu_num, report_nm=report_nm, root_path=checkpoint_path)]
+        )
+        
 
     model_args = {}
 
@@ -52,6 +77,7 @@ def train(
     model_args["optimizer"] = optimizer
     model_args["intent_optimizer_lr"] = intent_optimizer_lr
     model_args["entity_optimizer_lr"] = entity_optimizer_lr
+    model_args['lower_text'] = lower_text
 
     for key, value in kwargs.items():
         model_args[key] = value
