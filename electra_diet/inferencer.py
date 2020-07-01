@@ -15,8 +15,10 @@ class Inferencer:
     def __init__(self, checkpoint_path: str):
         try:
             self.model = KoELECTRAGenClassifier.load_from_checkpoint(checkpoint_path)
+            self.use_generator = True
         except:
             self.model = KoELECTRAClassifier.load_from_checkpoint(checkpoint_path)
+            self.use_generator = False
         self.model.model.eval()
 
         self.intent_dict = {}
@@ -33,7 +35,6 @@ class Inferencer:
         logging.info('entity dictionary')
         logging.info(self.entity_dict)
 
-        self.use_generator = self.model.hparams.use_generator
 
     def inference(self, text: str, intent_topk=5):
         if self.model is None:
@@ -49,7 +50,7 @@ class Inferencer:
         tokens = tuple(tokens)
         if self.use_generator:
             target_length = self.model.hparams.intent_label_len
-            intent_decoder, encoder_outputs, entity_result = self.model.forward(*tokens)
+            (intent_decoder, encoder_outputs), entity_result = self.model.forward(*tokens)
             decoder = IntentDecoder(target_length, intent_decoder, encoder_outputs)
             intent_results = decoder.process()
             
