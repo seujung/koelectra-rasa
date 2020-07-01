@@ -49,7 +49,6 @@ def train(
     model_args["seq_len"] = seq_len
     model_args["intent_class_num"] = intent_class_num
     model_args["entity_class_num"] = entity_class_num
-    model_args["use_generator"] = use_intent_generator
     model_args["optimizer"] = optimizer
     model_args["intent_optimizer_lr"] = intent_optimizer_lr
     model_args["entity_optimizer_lr"] = entity_optimizer_lr
