@@ -1,5 +1,5 @@
 numpy
-pycm
+pycm>=2.7
 pytorch-lightning==0.8.1
 torch>=1.4.0
 pytorch-nlp>=0.5.0
