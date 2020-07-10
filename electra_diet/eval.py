@@ -4,6 +4,13 @@ from pytorch_lightning.callbacks.base import Callback
 from electra_diet.metrics import show_intent_report, show_entity_report
 from electra_diet.dataset.electra_dataset import ElectraDataset
 
+def get_parent_dir(path, num_recursive=1):
+    result = path
+    for i in range(num_recursive):
+        result = os.path.dirname(result)
+    return result
+
+
 class PerfCallback(Callback):
     def __init__(self, file_path=None, gpu_num=0, report_nm=None, output_dir=None, root_path=None):
         self.file_path = file_path
@@ -26,7 +33,7 @@ class PerfCallback(Callback):
             dataset = ElectraDataset(file_path=self.file_path, tokenizer=None)
                 
         if self.output_dir is None:
-            folder_path = [f for f in glob.glob(os.path.join(self.root_path, "**/"), recursive=False)]
+            folder_path = [get_parent_dir(f, 2) for f in glob.glob(os.path.join(self.root_path, "**/checkpoints/*.ckpt"), recursive=False)]
             folder_path.sort()
             self.output_dir  = folder_path[-1]
         self.output_dir = os.path.join(self.output_dir, 'results')
