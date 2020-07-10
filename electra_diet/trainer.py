@@ -22,7 +22,9 @@ early_stop_callback = EarlyStopping(
 )
 
 def train(
-    file_path,
+    train_file_path,
+    val_file_path,
+#     file_path,
     # training args
     train_ratio=0.8,
     batch_size=32,
@@ -40,11 +42,16 @@ def train(
     **kwargs
 ):
     gpu_num = torch.cuda.device_count()
+    
+    if gpu_num > 1:
+        dist_mode = 'ddp'
+    else:
+        dist_mode = None
     if early_stop:
         early_stop_callback = EarlyStopping(
                                monitor='val_loss',
                                min_delta=0.00,
-                               patience=3,
+                               patience=2,
                                verbose=False,
                                mode='min'
                             )
@@ -52,12 +59,13 @@ def train(
         trainer = Trainer(
             default_root_dir=checkpoint_path, max_epochs=max_epochs, gpus=gpu_num,
             callbacks=[PerfCallback(gpu_num=gpu_num, report_nm=report_nm, root_path=checkpoint_path)],
-            early_stop_callback=early_stop_callback
+            early_stop_callback=early_stop_callback, distributed_backend=dist_mode
         )
         
     else:
         trainer = Trainer(
-            default_root_dir=checkpoint_path, max_epochs=max_epochs, gpus=gpu_num, callbacks=[PerfCallback(gpu_num=gpu_num, report_nm=report_nm, root_path=checkpoint_path)]
+            default_root_dir=checkpoint_path, max_epochs=max_epochs, gpus=gpu_num, callbacks=[PerfCallback(gpu_num=gpu_num, report_nm=report_nm, root_path=checkpoint_path)],
+            distributed_backend=dist_mode
         )
         
 
@@ -65,7 +73,9 @@ def train(
 
     # training args
     model_args["max_epochs"] = max_epochs
-    model_args["file_path"] = file_path
+    model_args["train_file_path"] = train_file_path
+    model_args["val_file_path"] = val_file_path
+#     model_args["file_path"] = file_path
     model_args["train_ratio"] = train_ratio
     model_args["batch_size"] = batch_size
     model_args["seq_len"] = seq_len

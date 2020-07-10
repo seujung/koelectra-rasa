@@ -28,11 +28,6 @@ class KoELECTRAClassifier(pl.LightningModule):
         super().__init__()
         
         self.hparams = hparams
-#         self.model = KoElectraModel(
-#             intent_class_num=len(self.dataset.get_intent_idx()),
-#             entity_class_num=len(self.dataset.get_entity_idx())
-#         )
-    
         self.model = KoElectraModel(
             intent_class_num=self.hparams.intent_class_num,
             entity_class_num=self.hparams.entity_class_num
@@ -52,41 +47,52 @@ class KoELECTRAClassifier(pl.LightningModule):
         return self.model(input_ids, token_type_ids)
     
 
-    def prepare_data(self):
-        if hasattr(self.hparams, 'tokenizer'):
-            self.dataset = ElectraDataset(file_path=self.hparams.file_path,
-                tokenizer=self.hparams.tokenizer, lower_text=self.hparams.lower_text)
-        else:
-            self.dataset = ElectraDataset(file_path=self.hparams.file_path,
-                tokenizer=None, lower_text=self.hparams.lower_text)
-        train_length = int(len(self.dataset) * self.train_ratio)
+#     def prepare_data(self):
+#         if hasattr(self.hparams, 'tokenizer'):
+#             self.dataset = ElectraDataset(file_path=self.hparams.file_path,
+#                 tokenizer=self.hparams.tokenizer, lower_text=self.hparams.lower_text)
+#         else:
+#             self.dataset = ElectraDataset(file_path=self.hparams.file_path,
+#                 tokenizer=None, lower_text=self.hparams.lower_text)
+#         train_length = int(len(self.dataset) * self.train_ratio)
         
-        # self.hparams.tokenize = self.get_tokenize()
-        self.hparams.intent_label = self.get_intent_label()
-        self.hparams.entity_label = self.get_entity_label()
+#         # self.hparams.tokenize = self.get_tokenize()
+#         self.hparams.intent_label = self.get_intent_label()
+#         self.hparams.entity_label = self.get_entity_label()
         
-        self.train_dataset, self.val_dataset = random_split(
-            self.dataset, [train_length, len(self.dataset) - train_length],
-        )
+#         self.train_dataset, self.val_dataset = random_split(
+#             self.dataset, [train_length, len(self.dataset) - train_length],
+#         )
     
     def get_tokenize(self):
         return self.dataset.tokenize
     
-    def get_intent_label(self):
+    def get_intent_label(self, dataset):
         self.intent_dict = {}
-        tmp_intent_dict = self.dataset.get_intent_idx()
+        tmp_intent_dict = dataset.get_intent_idx()
         for k, v in tmp_intent_dict.items():
             self.intent_dict[str(v)] = k ##hparams key type should be string.
         return self.intent_dict 
     
-    def get_entity_label(self):
+    def get_entity_label(self, dataset):
         self.entity_dict = {}
-        tmp_entity_dict = self.dataset.get_entity_idx()
+        tmp_entity_dict = dataset.get_entity_idx()
         for k, v in tmp_entity_dict.items():
             self.entity_dict[str(v)] = k
         return self.entity_dict
             
     def train_dataloader(self):
+        print("load train dataloader")
+        if hasattr(self.hparams, 'tokenizer'):
+            self.train_dataset = ElectraDataset(file_path=self.hparams.train_file_path,
+                tokenizer=self.hparams.tokenizer, lower_text=self.hparams.lower_text)
+        else:
+            self.train_dataset = ElectraDataset(file_path=self.hparams.train_file_path,
+                tokenizer=None, lower_text=self.hparams.lower_text)
+        
+        self.hparams.intent_label = self.get_intent_label(self.train_dataset)
+        self.hparams.entity_label = self.get_entity_label(self.val_dataset)
+        
         train_loader = DataLoader(
             self.train_dataset,
             batch_size=self.batch_size,
@@ -95,6 +101,14 @@ class KoELECTRAClassifier(pl.LightningModule):
         return train_loader
 
     def val_dataloader(self):
+        print("load val dataloader")
+        if hasattr(self.hparams, 'tokenizer'):
+            self.val_dataset = ElectraDataset(file_path=self.hparams.val_file_path,
+                tokenizer=self.hparams.tokenizer, lower_text=self.hparams.lower_text)
+        else:
+            self.val_dataset = ElectraDataset(file_path=self.hparams.val_file_path,
+                tokenizer=None, lower_text=self.hparams.lower_text)
+            
         val_loader = DataLoader(
             self.val_dataset,
             batch_size=self.batch_size,
@@ -121,7 +135,11 @@ class KoELECTRAClassifier(pl.LightningModule):
 
     def training_step(self, batch, batch_idx, optimizer_idx):
         self.model.train()
-
+        
+        assert self.train_dataset.intent_dict == self.val_dataset.intent_dict
+        assert self.train_dataset.entity_dict == self.val_dataset.entity_dict
+        
+        
         inputs, intent_idx, entity_idx = batch
         (input_ids, token_type_ids) = inputs
         
@@ -189,7 +207,7 @@ class KoELECTRAClassifier(pl.LightningModule):
             "val_loss": intent_loss + entity_loss,
         }
 
-    def validation_end(self, outputs):
+    def validation_epoch_end(self, outputs):
         avg_loss = torch.stack([x["val_loss"] for x in outputs]).mean()
         avg_intent_acc = torch.stack([x["val_intent_acc"] for x in outputs]).mean()
         avg_entity_acc = torch.stack([x["val_entity_acc"] for x in outputs]).mean()
