@@ -1,8 +1,8 @@
 import random
 
 def split_train_val(file_name, val_ratio=0.2):
-    train_file_name = file_name.replace('.', '_train.')
-    val_file_name = file_name.replace('.', '_val.')
+    train_file_name = file_name.replace('.md', '_train.md')
+    val_file_name = file_name.replace('.md', '_val.md')
 
     markdown_lines = open(file_name, encoding="utf-8").readlines()
     data_list = dict()

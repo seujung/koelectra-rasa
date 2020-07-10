@@ -43,15 +43,20 @@ class KoELECTRAClassifier(pl.LightningModule):
         self.entity_optimizer_lr = self.hparams.entity_optimizer_lr
         self.intent_loss_fn = nn.CrossEntropyLoss()
         self.entity_loss_fn = nn.CrossEntropyLoss(ignore_index=self.ignore_index)
+        
+        train_file_path, val_file_path = split_train_val(self.hparams.file_path)
+        self.hparams.train_file_path = train_file_path
+        self.hparams.val_file_path = val_file_path
 
     def forward(self, input_ids, token_type_ids):
         return self.model(input_ids, token_type_ids)
     
 
-    def prepare_data(self):
-        train_file_path, val_file_path = split_train_val(self.hparams.file_path)
-        self.hparams.train_file_path = train_file_path
-        self.hparams.val_file_path = val_file_path
+#     def prepare_data(self):
+#         train_file_path, val_file_path = split_train_val(self.hparams.file_path)
+#         self.hparams.train_file_path = train_file_path
+#         self.hparams.val_file_path = val_file_path
+        
     
     def get_tokenize(self):
         return self.dataset.tokenize
