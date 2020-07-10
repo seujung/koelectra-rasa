@@ -22,9 +22,9 @@ early_stop_callback = EarlyStopping(
 )
 
 def train(
-    train_file_path,
-    val_file_path,
-#     file_path,
+    # train_file_path,
+    # val_file_path,
+    file_path,
     # training args
     train_ratio=0.8,
     batch_size=32,
@@ -73,9 +73,9 @@ def train(
 
     # training args
     model_args["max_epochs"] = max_epochs
-    model_args["train_file_path"] = train_file_path
-    model_args["val_file_path"] = val_file_path
-#     model_args["file_path"] = file_path
+    # model_args["train_file_path"] = train_file_path
+    # model_args["val_file_path"] = val_file_path
+    model_args["file_path"] = file_path
     model_args["train_ratio"] = train_ratio
     model_args["batch_size"] = batch_size
     model_args["seq_len"] = seq_len

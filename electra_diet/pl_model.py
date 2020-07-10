@@ -12,6 +12,7 @@ from torchnlp.metrics import get_accuracy, get_token_accuracy
 from pytorch_lightning import Trainer
 
 from electra_diet.dataset.electra_dataset import ElectraDataset
+from electra_diet.preprocess.data_split import split_train_val
 from electra_diet.model import KoElectraModel
 
 import os, sys
@@ -47,22 +48,10 @@ class KoELECTRAClassifier(pl.LightningModule):
         return self.model(input_ids, token_type_ids)
     
 
-#     def prepare_data(self):
-#         if hasattr(self.hparams, 'tokenizer'):
-#             self.dataset = ElectraDataset(file_path=self.hparams.file_path,
-#                 tokenizer=self.hparams.tokenizer, lower_text=self.hparams.lower_text)
-#         else:
-#             self.dataset = ElectraDataset(file_path=self.hparams.file_path,
-#                 tokenizer=None, lower_text=self.hparams.lower_text)
-#         train_length = int(len(self.dataset) * self.train_ratio)
-        
-#         # self.hparams.tokenize = self.get_tokenize()
-#         self.hparams.intent_label = self.get_intent_label()
-#         self.hparams.entity_label = self.get_entity_label()
-        
-#         self.train_dataset, self.val_dataset = random_split(
-#             self.dataset, [train_length, len(self.dataset) - train_length],
-#         )
+    def prepare_data(self):
+        train_file_path, val_file_path = split_train_val(self.hparams.file_path)
+        self.hparams.train_file_path = train_file_path
+        self.hparams.val_file_path = val_file_path
     
     def get_tokenize(self):
         return self.dataset.tokenize
