@@ -216,39 +216,101 @@ class ElectraDataset(torch.utils.data.Dataset):
         text_token = self.tokenizer.encode(text)
         entity_idx = np.zeros(self.seq_len)
         for entity_info in self.dataset[idx]["entities"]:
-            add_token = 0
-            flag = -1
-            ## [데이터를] 이 하나의 토큰으로 인식됨 --> 조사 추가
-            while flag < 0:
-                base_cur_entity_value = text[entity_info['start']:entity_info['end']]
-                cur_entity_value = text[entity_info['start']:entity_info['end'] + add_token] ##원래 설정된 entity value
-                cur_entityt_idx = self.tokenizer.encode(cur_entity_value)[1:-1]
-                (start_pos, end_pos) = find_sub_list(cur_entityt_idx, text_token)
+            entity_value = text[entity_info['start']:entity_info['end']]
+            ## entity value가 띄어쓰기가 없는 경우
+            if ' ' not in entity_value:
+                ##Case 1. Partial이 아닌 경우
+                tmp_entity_idx = self.tokenizer.encode(entity_value, add_special_tokens=False)
+                (start_pos, end_pos) = find_sub_list(tmp_entity_idx, text_token)
                 flag = start_pos + end_pos
-                add_token += 1
-                if add_token > len(text_token):
-                    ## Case 3: token이 분리된 경우
-                    isin_token = ''
-                    for t in text.split(' '):
-                        if base_cur_entity_value in t:
-                            isin_token = t
-                    partial_idx = self.tokenizer.encode(isin_token)[1:-1]
-                    ##token이 검출되지 않은 경우 에러 발생
-                    if len(partial_idx) == 0:
-                        raise Exception('please check the entity value.! current text is {}'.format(cur_entity_value)) 
+                
+                if flag < 0:
+                    ## Case 2. Partial인 경우
+                    tmp_entity_value = ''
+                    for t in text.split():
+                        if entity_value in t:
+                            tmp_entity_value = t
+                    decode_text = []
+                    for i in text_token:
+                        decode_text.append(self.tokenizer.convert_ids_to_tokens(i))
+
+                    tmp_entity_token = []
+                    for i, d in enumerate(decode_text):
+                        if d.replace('#', '') in tmp_entity_value:
+                            tmp_entity_token.append(d)
+
+                    tmp_entity_idx = [] 
+                    for t in tmp_entity_token:
+                        if t.replace('#', '') in entity_value:
+                            tmp_entity_idx.append(self.tokenizer.convert_tokens_to_ids(t))
+                    if len(entity_idx) > 0:     
+                        (start_pos, end_pos) = find_sub_list(entity_idx, text_token)
+
+                    else:
+                        ##조사로 묶인 token으로 구성된 경우
+                        add_token = 1
+                        while flag < 0:
+                            cur_entity_value = text[entity_info['start']:entity_info['end'] + add_token] ##원래 설정된 entity value
+                            cur_entityt_idx = self.tokenizer.encode(cur_entity_value, add_special_tokens=False)
+                            (start_pos, end_pos) = find_sub_list(cur_entityt_idx, text_token)
+                            flag = start_pos + end_pos
+                            add_token += 1
+                            if add_token > len(text_token):
+                                raise Exception('please check the entity value.! current text is {}'.format(text)) 
+
+            else:
+                tmp_entity_idx = self.tokenizer.encode(entity_value, add_special_tokens=False)
+                (start_pos, end_pos) = find_sub_list(tmp_entity_idx, text_token)
+                flag = start_pos + end_pos
+
+                if flag < 0:
+                    add_token = 1
+                    while flag < 0:
+                        cur_entity_value = text[entity_info['start']:entity_info['end'] + add_token] ##원래 설정된 entity value
+                        cur_entityt_idx = self.tokenizer.encode(cur_entity_value, add_special_tokens=False)
+                        (start_pos, end_pos) = find_sub_list(cur_entityt_idx, text_token)
+                        flag = start_pos + end_pos
+                        add_token += 1
+                        if add_token > len(text_token):
+                            raise Exception('please check the entity value.! current text is {}'.format(text)) 
+
+        
+
+
+        # for entity_info in self.dataset[idx]["entities"]:
+        #     add_token = 0
+        #     flag = -1
+        #     ## [데이터를] 이 하나의 토큰으로 인식됨 --> 조사 추가
+        #     while flag < 0:
+        #         base_cur_entity_value = text[entity_info['start']:entity_info['end']]
+        #         cur_entity_value = text[entity_info['start']:entity_info['end'] + add_token] ##원래 설정된 entity value
+        #         cur_entityt_idx = self.tokenizer.encode(cur_entity_value)[1:-1]
+        #         (start_pos, end_pos) = find_sub_list(cur_entityt_idx, text_token)
+        #         flag = start_pos + end_pos
+        #         add_token += 1
+        #         if add_token > len(text_token):
+        #             ## Case 3: token이 분리된 경우
+        #             isin_token = ''
+        #             for t in text.split(' '):
+        #                 if base_cur_entity_value in t:
+        #                     isin_token = t
+        #             partial_idx = self.tokenizer.encode(isin_token)[1:-1]
+        #             ##token이 검출되지 않은 경우 에러 발생
+        #             if len(partial_idx) == 0:
+        #                 raise Exception('please check the entity value.! current text is {}'.format(cur_entity_value)) 
                     
-                    cur_entity_idx = []
-                    # partial token 검색
-                    for i in partial_idx:
-                        partial_token = self.tokenizer.ids_to_tokens[i].replace('#','')
-                        if partial_token in base_cur_entity_value:
-                            # print(partial_token)
-                            cur_entity_idx.append(i)
-                    if len(cur_entity_idx) == 0:
-                        raise Exception('please check the entity value.! current text is {}'.format(cur_entity_value)) 
+        #             cur_entity_idx = []
+        #             # partial token 검색
+        #             for i in partial_idx:
+        #                 partial_token = self.tokenizer.ids_to_tokens[i].replace('#','')
+        #                 if partial_token in base_cur_entity_value:
+        #                     # print(partial_token)
+        #                     cur_entity_idx.append(i)
+        #             if len(cur_entity_idx) == 0:
+        #                 raise Exception('please check the entity value.! current text is {}'.format(cur_entity_value)) 
                     
-                    (start_pos, end_pos) = find_sub_list(cur_entity_idx, text_token)
-                    flag = start_pos + end_pos
+        #             (start_pos, end_pos) = find_sub_list(cur_entity_idx, text_token)
+        #             flag = start_pos + end_pos
 
             if self.tag_type == 'bio':
                 begin = -1
@@ -256,7 +318,10 @@ class ElectraDataset(torch.utils.data.Dataset):
                 mid_tag = 'I-'
                 cur_entity = entity_info['entity']
                 for i in range(start_pos, end_pos):
+                    # print("i:{}".format(i))
                     if begin < 0:
+                        # print("tag:{}".format(begin_tag + cur_entity))
+                        # print(entity_idx)
                         entity_idx[i] = self.entity_dict_bio[begin_tag + cur_entity]
                         begin += 1
                     else:
@@ -273,11 +338,6 @@ class ElectraDataset(torch.utils.data.Dataset):
                         
         entity_idx[valid_length:] = -1
         entity_idx = torch.from_numpy(entity_idx)
-        # for entity_info in self.dataset[idx]["entities"]:
-        #     ##consider [CLS] token
-        #     for i in range(entity_info["start"] + 1, entity_info["end"] + 2):
-        #         entity_idx[i] = entity_info["entity_idx"]
-        # entity_idx = torch.from_numpy(entity_idx)
 
         return (tokens, segment_ids), intent_idx, entity_idx
 

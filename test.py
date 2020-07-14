@@ -1,14 +1,13 @@
 import numpy as np
 from electra_diet.dataset import ElectraDataset
 # file_path ='/Users/digit82_mac/git_repo/nlu_dataset/nlu_goldenset.md'
-file_path ='/Users/digit82/git_repo/nlu_dataset/nlu.md'
+file_path ='/Users/digit82_mac/git_repo/nlu_dataset/nlu.md'
 
 data = ElectraDataset(file_path)
 
-# from tqdm import trange
-# for idx in trange(len(data)):
-#     print(idx)
-#     o = data.__getitem__(idx)
+from tqdm import trange
+for idx in trange(len(data)):
+    o = data.__getitem__(idx)
 
 
 from electra_diet.tokenizer import get_tokenizer
