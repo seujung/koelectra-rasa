@@ -36,12 +36,14 @@ def train(
     entity_optimizer_lr=2e-5,
     checkpoint_path=os.getcwd(),
     max_epochs=10,
+    gpu_num=None,
     report_nm=None,
     lower_text=True,
     early_stop=True,
     **kwargs
-):
-    gpu_num = torch.cuda.device_count()
+):  
+    if gpu_num is None:
+        gpu_num = torch.cuda.device_count()
     
     if gpu_num > 1:
         dist_mode = 'ddp'
@@ -73,8 +75,6 @@ def train(
 
     # training args
     model_args["max_epochs"] = max_epochs
-    # model_args["train_file_path"] = train_file_path
-    # model_args["val_file_path"] = val_file_path
     model_args["file_path"] = file_path
     model_args["train_ratio"] = train_ratio
     model_args["batch_size"] = batch_size
