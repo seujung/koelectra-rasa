@@ -1,29 +1,71 @@
-# DIET-pytorch
-Dual Intent Entity Transformer Pytorch version
+# KoELECTRA based DIET Model
+Dual Intent Entity Transformer Pytorch version based on KoELECTRA
 
 It is implemented [pytorch-lightning](https://github.com/PyTorchLightning/pytorch-lightning) based module
+
+
+## Model Architecture
+
+
+
+## Dataset
+- nlu.md
+```
+## intent:check_balance
+- what is my balance <!-- no entity -->
+- how much do I have on my [savings](source_account) <!-- entity "source_account" has value "savings" -->
+- Could I pay in [yen](currency)? 
+
+## intent:greet
+- hey
+- hello
+
+```
+
+- labels.json
+
+```
+{
+    "intent" : ['check_balance', 'greet],
+    "entity" : ['sourec_account', currency]
+}
+
+```
+
+
+##
+
 
 ## How to train
 ---
 1. Training 
 
     ```
+    import json
     from DIET import trainer
 
-    trainer.train(
-        file_path,
+    with open('labels.json') as f:
+    labels = json.load(f)
 
+    intent_class_num = len(labels['intent'])
+    entity_class_num = len(labels['entity']) * 2 + 1  ## consider BIO type
+
+    trainer.train(
+        file_path='./nlu.md'
         #training args
         train_ratio=0.8,
-        batch_size=32,
-        optimizer="Adam",
-        intent_optimizer_lr=1e-5,
-        entity_optimizer_lr=2e-5,
-        checkpoint_path=os.getcwd(),
-        max_epochs=10,
-
-        #model args
-        num_encoder_layers=3,
+        batch_size=256,
+        intent_class_num = intent_class_num,
+        entity_class_num = entity_class_num,
+        optimizer="AdamW",
+        intent_optimizer_lr=3e-5,
+        entity_optimizer_lr=4e-5,
+        checkpoint_path='electra_diet_log',
+        max_epochs=20,
+        gpu_num=1,
+        lower_text=True,
+        early_stop=True,
+        report_nm ="electra_report.json"
         **kwargs
     )
     ```
