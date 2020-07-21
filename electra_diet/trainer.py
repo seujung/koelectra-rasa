@@ -12,6 +12,7 @@ from torch.utils.data import DataLoader
 
 from electra_diet.eval import PerfCallback
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
+from pytorch_lightning.callbacks import LearningRateLogger
 
 early_stop_callback = EarlyStopping(
    monitor='val_accuracy',
@@ -20,6 +21,8 @@ early_stop_callback = EarlyStopping(
    verbose=False,
    mode='max'
 )
+
+lr_logger = LearningRateLogger()
 
 def train(
     file_path,
@@ -51,13 +54,14 @@ def train(
         
         trainer = Trainer(
             default_root_dir=checkpoint_path, max_epochs=max_epochs, gpus=gpu_num,
-            callbacks=[PerfCallback(gpu_num=gpu_num, report_nm=report_nm, root_path=checkpoint_path)],
+            callbacks=[PerfCallback(gpu_num=gpu_num, report_nm=report_nm, root_path=checkpoint_path), lr_logger],
             early_stop_callback=early_stop_callback
         )
         
     else:
         trainer = Trainer(
-            default_root_dir=checkpoint_path, max_epochs=max_epochs, gpus=gpu_num, callbacks=[PerfCallback(gpu_num=gpu_num, report_nm=report_nm, root_path=checkpoint_path)]
+            default_root_dir=checkpoint_path, max_epochs=max_epochs, gpus=gpu_num,
+            callbacks=[PerfCallback(gpu_num=gpu_num, report_nm=report_nm, root_path=checkpoint_path), lr_logger]
         )
         
 

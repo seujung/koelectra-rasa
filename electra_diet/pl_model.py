@@ -112,11 +112,11 @@ class KoELECTRAClassifier(pl.LightningModule):
 
         return (
             [intent_optimizer, entity_optimizer],
-            # [StepLR(intent_optimizer, step_size=1),StepLR(entity_optimizer, step_size=1),],
-            [
-                ReduceLROnPlateau(intent_optimizer, patience=1, factor=0.3),
-                ReduceLROnPlateau(entity_optimizer, patience=1, factor=0.3),
-            ],
+            [StepLR(intent_optimizer, gamma=0.8, step_size=100),StepLR(entity_optimizer, gamma=0.8, step_size=100),],
+#             [
+#                 ReduceLROnPlateau(intent_optimizer, patience=1, factor=0.3),
+#                 ReduceLROnPlateau(entity_optimizer, patience=1, factor=0.3),
+#             ],
         )
 
     def training_step(self, batch, batch_idx, optimizer_idx):
