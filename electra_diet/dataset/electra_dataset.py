@@ -110,7 +110,10 @@ class ElectraDataset(torch.utils.data.Dataset):
         if intent_dict is not None:
             self.intent_dict = intent_dict
         if entity_dict is not None:
-            self.entity_dict = entity_dict
+            if tag_type == 'bio':
+                self.entity_dict_bio = entity_dict
+            else:
+                self.entity_dict = entity_dict
 
         current_intent_focus = ""
 
