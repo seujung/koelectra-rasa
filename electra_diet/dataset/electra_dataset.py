@@ -105,6 +105,12 @@ class ElectraDataset(torch.utils.data.Dataset):
             self.entity_dict_bio['B-'+entity_type] = len(self.entity_dict_bio)
             self.entity_dict_bio['I-'+entity_type] = len(self.entity_dict_bio)
             self.entity_dict[entity_type] = len(self.entity_dict)
+        
+        ##use existed intent, entity info
+        if intent_dict is not None:
+            self.intent_dict = intent_dict
+        if entity_dict is not None:
+            self.entity_dict = entity_dict
 
         current_intent_focus = ""
 
