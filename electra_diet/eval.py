@@ -6,7 +6,7 @@ from electra_diet.dataset.electra_dataset import ElectraDataset
 
 class PerfCallback(Callback):
     def __init__(self, file_path=None, gpu_num=0, report_nm=None, output_dir=None, root_path=None,
-                    intent_dict=None, emtity_dict=None):
+                    intent_dict=None, entity_dict=None):
         self.file_path = file_path
         if gpu_num > 0:
             self.cuda = True
