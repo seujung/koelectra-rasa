@@ -5,7 +5,8 @@ from electra_diet.metrics import show_intent_report, show_entity_report
 from electra_diet.dataset.electra_dataset import ElectraDataset
 
 class PerfCallback(Callback):
-    def __init__(self, file_path=None, gpu_num=0, report_nm=None, output_dir=None, root_path=None):
+    def __init__(self, file_path=None, gpu_num=0, report_nm=None, output_dir=None, root_path=None,
+                    intent_dict=None, emtity_dict=None):
         self.file_path = file_path
         if gpu_num > 0:
             self.cuda = True
@@ -13,6 +14,8 @@ class PerfCallback(Callback):
             self.cuda = False
         self.report_nm = report_nm
         self.output_dir = output_dir
+        self.intent_dict = intent_dict
+        self.entity_dict = entity_dict
         if root_path is None:
             self.root_path = 'lightning_logs'
         else:
@@ -23,7 +26,8 @@ class PerfCallback(Callback):
         if self.file_path is None:
             dataset = pl_module.val_dataset
         else:
-            dataset = ElectraDataset(file_path=self.file_path, tokenizer=None)
+            dataset = ElectraDataset(file_path=self.file_path, tokenizer=None,
+                                        intent_dict=self.intent_dict, entity_dict=self.entity_dict)
                 
         if self.output_dir is None:
             folder_path = [f for f in glob.glob(os.path.join(self.root_path, "**/"), recursive=False)]
