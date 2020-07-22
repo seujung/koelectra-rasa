@@ -208,6 +208,7 @@ class Entity_Matrics:
         self.types = set(entity['entity'] for sent in sents_true_labels for entity in sent)
         self.confusion_matrices = {type: {'TP': 0, 'TN': 0, 'FP': 0, 'FN': 0} for type in self.types}
         self.scores = {type: {'p': 0, 'r': 0, 'f1': 0} for type in self.types}
+        self.support = {type: 0 for type in self.types}
 
     def cal_confusion_matrices(self) -> Dict[str, Dict]:
         """Calculate confusion matrices for all sentences."""
@@ -215,6 +216,7 @@ class Entity_Matrics:
             for true_label in true_labels: 
                 entity_type = true_label['entity']
                 prediction_hit_count = 0 
+                self.support[entity_type] += 1
                 for pred_label in pred_labels:
                     if pred_label['entity'] != entity_type:
                         continue
@@ -268,7 +270,8 @@ class Entity_Matrics:
             sum_TP += v['TP']
             sum_FP += v['FP']
             sum_FN += v['FN']
-            support += np.array(list(self.confusion_matrices[k].values())).sum().item()
+#             support += np.array(list(self.confusion_matrices[k].values())).sum().item()
+        support = np.array(list(self.support.values())).sum().item()
         precision = sum_TP / (sum_TP + sum_FP)
         recall = sum_TP / (sum_TP + sum_FN)
         f1 = 2*(precision * recall / (precision + recall))
@@ -285,8 +288,10 @@ class Entity_Matrics:
         for k, v in self.scores.items():
             precision.append(v['p'])
             recall.append(v['r'])
-        for k, v in self.confusion_matrices.items():
-            support += np.array(list(self.confusion_matrices[k].values())).sum().item()
+#         for k, v in self.confusion_matrices.items():
+#             support += np.array(list(self.confusion_matrices[k].values())).sum().item()
+        support = np.array(list(self.support.values())).sum().item()
+
         precision = np.array(precision).mean()
         recall = np.array(recall).mean()
         f1 = 2*(precision * recall / (precision + recall))
@@ -307,8 +312,8 @@ class Entity_Matrics:
             fp.append(v['FP'])
             fn.append(v['FN'])
             weight.append(np.array(list(v.values())).sum().item())
-            support += np.array(list(self.confusion_matrices[k].values())).sum().item()
-
+#             support += np.array(list(self.confusion_matrices[k].values())).sum().item()
+        support = np.array(list(self.support.values())).sum().item()
         weight = np.array(weight) / np.array(weight).sum()
         tp = np.array(tp)
         fp = np.array(fp)
@@ -335,7 +340,9 @@ class Entity_Matrics:
             report[k]['precision'] = v['p']
             report[k]['recall'] = v['r']
             report[k]['f1-score'] = v['f1']
-            report[k]['support'] = np.array(list(self.confusion_matrices[k].values())).sum().item()
+#             report[k]['support'] = np.array(list(self.confusion_matrices[k].values())).sum().item()
+            report[k]['support'] = self.support[k]
+            
         report['micro avg'] = self.micro_avg
         report['macro avg'] = self.macro_avg
         report['weighted avg'] = self.weight_avg
