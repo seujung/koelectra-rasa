@@ -7,9 +7,7 @@ from transformers.modeling_electra import ElectraModel, ElectraConfig, ElectraPr
 class KoElectraModel(nn.Module):
     def __init__(self, intent_class_num, entity_class_num):
         super(KoElectraModel, self).__init__()
-
-        # config = ElectraConfig.from_dict(config)
-        # self.bert = ElectraModel(config)
+        
         self.bert = ElectraModel.from_pretrained("monologg/koelectra-small-v2-discriminator")
         config = self.bert.config
         self.pad_idx = config.pad_token_id

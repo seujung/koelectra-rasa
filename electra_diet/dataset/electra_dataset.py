@@ -26,7 +26,22 @@ class ElectraDataset(torch.utils.data.Dataset):
     ## intent:intent_데이터_자동_선물하기_멀티턴                <- intent name
     - T끼리 데이터 주기적으로 보내기                            <- utterance without entity
     - 인터넷 데이터 [달마다](Every_Month)마다 보내줄 수 있어?    <- utterance with entity
-    
+
+    intent_dict format: 
+    {"intent_1" : 0, "intent_2":1, ...}
+
+    entity_dict format:
+    {'0:0, "B-Airport":1, "I-Airport:2, ...}
+
+    Args:
+        file_path : markdown input file path
+        seq_len : max sequence length(default=128)
+        tokenizer : tokenizer instance
+        intent_dict : intent label info
+        entity_dict : entity label info
+        lower_text : if True all text should be converted lower
+        tag_type : entity tag type(default:bio)
+
     """
 
     def __init__(
