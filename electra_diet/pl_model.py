@@ -5,6 +5,7 @@ from torch.utils.data import DataLoader, random_split
 from torch.optim import Adam
 from transformers import AdamW
 from torch.optim.lr_scheduler import StepLR, ReduceLROnPlateau
+from transformers import AdamW, get_linear_schedule_with_warmup
 
 
 from torchnlp.metrics import get_accuracy, get_token_accuracy
@@ -68,6 +69,8 @@ class KoELECTRAClassifier(pl.LightningModule):
         self.train_dataset, self.val_dataset = random_split(
             self.dataset, [train_length, len(self.dataset) - train_length],
         )
+        
+        self.total_steps = self.hparams.max_epochs * len(self.dataset)
     
     def get_tokenize(self):
         return self.dataset.tokenize
@@ -103,16 +106,49 @@ class KoELECTRAClassifier(pl.LightningModule):
         return val_loader
 
     def configure_optimizers(self):
+        no_decay = ["bias", "LayerNorm.weight"]
+        
+        optimizer_grouped_parameters = [
+            {
+                "params": [p for n, p in self.named_parameters() if not any(nd in n for nd in no_decay)],
+                "weight_decay": 0.1,
+            },
+            {
+                "params": [p for n, p in self.named_parameters() if any(nd in n for nd in no_decay)],
+                "weight_decay": 0.0,
+            },
+        ]
+        
         intent_optimizer = eval(
-            f"{self.optimizer}(self.parameters(), lr={self.intent_optimizer_lr})"
+            f"{self.optimizer}(optimizer_grouped_parameters, lr={self.intent_optimizer_lr})"
         )
         entity_optimizer = eval(
-            f"{self.optimizer}(self.parameters(), lr={self.entity_optimizer_lr})"
+            f"{self.optimizer}(optimizer_grouped_parameters, lr={self.entity_optimizer_lr})"
+        )
+        
+        
+#         intent_optimizer = eval(
+#             f"{self.optimizer}(self.parameters(), lr={self.intent_optimizer_lr})"
+#         )
+#         entity_optimizer = eval(
+#             f"{self.optimizer}(self.parameters(), lr={self.entity_optimizer_lr})"
+#         )
+                
+#         intent_scheduler = StepLR(intent_optimizer, gamma=0.8, step_size=2)
+#         entity_scheduler = StepLR(entity_optimizer, gamma=0.8, step_size=2)
+        intent_scheduler = get_linear_schedule_with_warmup(
+            intent_optimizer, num_warmup_steps=self.hparams.warmup_steps, num_training_steps=self.total_steps
+        )
+    
+        entity_scheduler = get_linear_schedule_with_warmup(
+            entity_optimizer, num_warmup_steps=self.hparams.warmup_steps, num_training_steps=self.total_steps
         )
 
         return (
             [intent_optimizer, entity_optimizer],
-            [StepLR(intent_optimizer, gamma=0.8, step_size=100),StepLR(entity_optimizer, gamma=0.8, step_size=100),],
+#             [StepLR(intent_optimizer, gamma=0.8, step_size=100), StepLR(entity_optimizer, gamma=0.8, step_size=2),],
+            [{"scheduler": intent_scheduler, "interval": "step", "frequency": 1},
+             {"scheduler": entity_scheduler, "interval": "step", "frequency": 1}]
 #             [
 #                 ReduceLROnPlateau(intent_optimizer, patience=1, factor=0.3),
 #                 ReduceLROnPlateau(entity_optimizer, patience=1, factor=0.3),
