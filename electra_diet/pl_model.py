@@ -70,7 +70,8 @@ class KoELECTRAClassifier(pl.LightningModule):
             self.dataset, [train_length, len(self.dataset) - train_length],
         )
         
-        self.total_steps = self.hparams.max_epochs * len(self.dataset)
+        self.hparams.total_steps = int(self.hparams.max_epochs * len(self.dataset) / self.hparams.batch_size)
+        self.hparams.warmup_steps = int(self.hparams.total_steps * self.hparams.warmup_ratio)
     
     def get_tokenize(self):
         return self.dataset.tokenize
@@ -137,11 +138,11 @@ class KoELECTRAClassifier(pl.LightningModule):
 #         intent_scheduler = StepLR(intent_optimizer, gamma=0.8, step_size=2)
 #         entity_scheduler = StepLR(entity_optimizer, gamma=0.8, step_size=2)
         intent_scheduler = get_linear_schedule_with_warmup(
-            intent_optimizer, num_warmup_steps=self.hparams.warmup_steps, num_training_steps=self.total_steps
+            intent_optimizer, num_warmup_steps=self.hparams.warmup_steps, num_training_steps=self.hparams.total_steps
         )
     
         entity_scheduler = get_linear_schedule_with_warmup(
-            entity_optimizer, num_warmup_steps=self.hparams.warmup_steps, num_training_steps=self.total_steps
+            entity_optimizer, num_warmup_steps=self.hparams.warmup_steps, num_training_steps=self.hparams.total_steps
         )
 
         return (

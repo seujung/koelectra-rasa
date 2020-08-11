@@ -30,7 +30,7 @@ def train(
     train_ratio=0.8,
     batch_size=32,
     seq_len=128,
-    warmup_steps = 1000,
+    warmup_ratio = 0.2,
     intent_class_num=None,
     entity_class_num=None,
     optimizer="AdamW",
@@ -80,12 +80,13 @@ def train(
     model_args["intent_optimizer_lr"] = intent_optimizer_lr
     model_args["entity_optimizer_lr"] = entity_optimizer_lr
     model_args['lower_text'] = lower_text
-    model_args['warmup_steps'] = warmup_steps
+    model_args['warmup_ratio'] = warmup_ratio
 
     for key, value in kwargs.items():
         model_args[key] = value
 
     hparams = Namespace(**model_args)
+    print(hparams)
 
     model = KoELECTRAClassifier(hparams)
 
