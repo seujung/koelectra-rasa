@@ -3,6 +3,6 @@ pycm>=2.7
 pytorch-lightning>=0.8.5
 torch>=1.4.0
 pytorch-nlp>=0.5.0
-
+pyahocorasick
 #models
 transformers>=2.9.0
