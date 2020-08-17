@@ -1,1 +1,2 @@
 include electra_diet/assets/*.json
+graft electra_diet/chatspace/resource

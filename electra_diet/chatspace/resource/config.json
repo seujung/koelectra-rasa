@@ -1,0 +1,22 @@
+{
+  "learning_rate": 0.001,
+  "batch_size": 512,
+  "valid_ratio": 0.025,
+  "epochs": 15,
+  "vocab_min_freq": 3,
+  "min_seq_len": 7,
+  "num_workers": 0,
+  "logging_step": 500,
+  "validation_step": 1500,
+  "test_threshold": 0.5,
+  "use_multi_gpu": false,
+  "device": "cuda",
+  "embedding_dim": 256,
+  "cnn_filter": 3,
+  "cnn_features": 128,
+  "space_prob": [0, 0.15, 0.4],
+  "lstm_bidirectional": true,
+  "dropout_keep_prob": 0.1,
+  "apply_weight": false,
+  "lstm_layers": 1
+}

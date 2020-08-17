@@ -3,6 +3,7 @@ import torch.nn as nn
 from electra_diet.pl_model import KoELECTRAClassifier
 from electra_diet.tokenizer import tokenize, get_tokenizer, delete_josa
 # from electra_diet.postprocessor import post_process
+from electra_diet
 import re
 
 import logging
@@ -12,9 +13,10 @@ intent_dict = {}
 entity_dict = {}
 
 class Inferencer:
-    def __init__(self, checkpoint_path: str):
+    def __init__(self, checkpoint_path: str, use_space_correction=True):
         self.model = KoELECTRAClassifier.load_from_checkpoint(checkpoint_path)
         self.model.model.eval()
+        self.space_cor = use_space_correction
 
         self.intent_dict = {}
         for k, v in self.model.hparams.intent_label.items():
@@ -30,6 +32,10 @@ class Inferencer:
         logging.info('entity dictionary')
         logging.info(self.entity_dict)
 
+        if self.space_cor:
+            from electra_diet.chatspace import ChatSpace
+            self.spacer = ChatSpace()
+
     def inference(self, text: str, intent_topk=5):
         try:
             if self.model.hparams.lower_text:
@@ -38,6 +44,8 @@ class Inferencer:
         except:
             lower_text = False
 
+        if self.space_cor:
+            text = self.spacer.space(text)
 
         if self.model is None:
             raise ValueError(
