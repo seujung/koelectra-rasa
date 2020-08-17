@@ -14,7 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from .metric import calculated_metric
-from .trainer import ChatSpaceTrainer
+from .corpus import DynamicCorpus
+from .dataset import ChatSpaceDataset
+from .vocab import Vocab
 
-__all__ = ["calculated_metric", "ChatSpaceTrainer"]
+__all__ = ["DynamicCorpus", "Vocab", "ChatSpaceDataset"]

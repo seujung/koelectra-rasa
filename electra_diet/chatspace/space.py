@@ -24,8 +24,8 @@ import torch.nn as nn
 from ahocorasick import Automaton
 from torch.utils.data import DataLoader
 
-from .data import ChatSpaceDataset
-from .data.vocab import Vocab
+from .dataset import ChatSpaceDataset
+from .dataset.vocab import Vocab
 from .model import ChatSpaceModel
 from .resource import CONFIG_PATH, JIT_MODEL_PATH, MODEL_DICT_PATH, VOCAB_PATH
 

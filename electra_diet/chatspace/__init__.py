@@ -14,8 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from .inference import ChatSpace
-from .data import ChatSpaceDataset
-from .data.vocab import Vocab
-from .model import ChatSpaceModel
-from .resource import CONFIG_PATH, JIT_MODEL_PATH, MODEL_DICT_PATH, VOCAB_PATH
+from .space import ChatSpace
+
+__all__ = ["ChatSpace"]
+__version__ = "1.0.2"
+__author__ = "ScatterLab"
