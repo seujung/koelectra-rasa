@@ -3,7 +3,6 @@ import torch.nn as nn
 from electra_diet.pl_model import KoELECTRAClassifier
 from electra_diet.tokenizer import tokenize, get_tokenizer, delete_josa
 # from electra_diet.postprocessor import post_process
-from electra_diet
 import re
 
 import logging
