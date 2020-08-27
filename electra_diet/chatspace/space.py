@@ -21,7 +21,6 @@ from typing import Dict, Generator, Iterable, List, Optional, Union
 
 import torch
 import torch.nn as nn
-from ahocorasick import Automaton
 from torch.utils.data import DataLoader
 
 from .dataset import ChatSpaceDataset
@@ -39,7 +38,7 @@ class ChatSpace:
         config_path: str = CONFIG_PATH,
         vocab_path: str = VOCAB_PATH,
         device: torch.device = DEFAULT_DEVICE,
-        from_jit: bool = True,
+        from_jit: bool = False,
         encoding: str = "utf-8",
     ):
         self.encoding = encoding
@@ -98,12 +97,11 @@ class ChatSpace:
 
         dataset = ChatSpaceDataset(self.config, texts, self.vocab)
         data_loader = DataLoader(dataset, batch_size, collate_fn=dataset.eval_collect_fn)
-        keyword_processor = self._get_keyword_processor(custom_vocab) if custom_vocab else None
 
         for i, batch in enumerate(data_loader):
             batch_texts = texts[i * batch_size : i * batch_size + batch_size]
             for text in self._single_batch_inference(
-                batch=batch, batch_texts=batch_texts, keyword_processor=keyword_processor
+                batch=batch, batch_texts=batch_texts
             ):
                 yield text
 
@@ -111,7 +109,6 @@ class ChatSpace:
         self,
         batch: Dict[str, torch.Tensor],
         batch_texts: List[str],
-        keyword_processor: Automaton = None,
     ) -> Generator[str, str, None]:
         """
         batch input 을 모델에 넣고, 예측된 띄어쓰기를 원본 텍스트에 반영하여
@@ -137,9 +134,6 @@ class ChatSpace:
         space_preds = output.argmax(dim=-1).cpu().tolist()
 
         for text, space_pred in zip(batch_texts, space_preds):
-            if keyword_processor:
-                space_pred = self._apply_custom_vocab(text, space_pred, keyword_processor)
-
             # yield generated text (spaced text)
             yield self.generate_text(text, space_pred)
 
@@ -165,16 +159,6 @@ class ChatSpace:
             for i in range(start_index, end_index + 1):
                 space_pred[i] = 1
         return space_pred
-
-    def _get_keyword_processor(self, custom_vocab: List[str]):
-        keyword_processor = Automaton()
-
-        for i, keyword in enumerate(custom_vocab):
-            if len(keyword) > 1:
-                keyword_processor.add_word(keyword, (i, keyword))
-
-        keyword_processor.make_automaton()
-        return keyword_processor
 
     def _get_torch_version(self) -> int:
         """
